@@ -50,7 +50,7 @@ const generateEmployeeId = () => {
 const registerFacultyController = async (req, res) => {
   try {
     const { email, phone } = req.body;
-    const profile = req.file.filename;
+    const profile = req.file ? req.file.filename : null;
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return ApiResponse.badRequest("Invalid email format").send(res);
@@ -65,7 +65,7 @@ const registerFacultyController = async (req, res) => {
     });
     if (existing) {
       return ApiResponse.conflict(
-        "Faculty with these details already exists"
+        "Faculty with these details already exists",
       ).send(res);
     }
 
@@ -83,10 +83,21 @@ const registerFacultyController = async (req, res) => {
       .select("-__v -password");
     return ApiResponse.created(
       sanitizedUser,
-      "Faculty Registered Successfully!"
+      "Faculty Registered Successfully!",
     ).send(res);
   } catch (error) {
     console.error("Register Error: ", error);
+    if (error.code === 11000) {
+      return ApiResponse.conflict(
+        "Faculty with these details already exists",
+      ).send(res);
+    }
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(", ");
+      return ApiResponse.badRequest(messages).send(res);
+    }
     return ApiResponse.internalServerError().send(res);
   }
 };
@@ -110,7 +121,7 @@ const updateFacultyController = async (req, res) => {
 
     if (password && password.length < 8) {
       return ApiResponse.badRequest(
-        "Password must be at least 8 characters"
+        "Password must be at least 8 characters",
       ).send(res);
     }
 
@@ -235,7 +246,7 @@ const updateFacultyPasswordHandler = async (req, res) => {
 
     if (!resetId || !password) {
       return ApiResponse.badRequest("Password and ResetId are required").send(
-        res
+        res,
       );
     }
 
@@ -261,7 +272,7 @@ const updateFacultyPasswordHandler = async (req, res) => {
     });
 
     return ApiResponse.success(null, "Password Updated Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     console.error("Password Update Error: ", error);
@@ -276,13 +287,13 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     if (!currentPassword || !newPassword) {
       return ApiResponse.badRequest(
-        "Current password and new password are required"
+        "Current password and new password are required",
       ).send(res);
     }
 
     if (newPassword.length < 8) {
       return ApiResponse.badRequest(
-        "New password must be at least 8 characters long"
+        "New password must be at least 8 characters long",
       ).send(res);
     }
 
@@ -293,11 +304,11 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
     if (!isPasswordValid) {
       return ApiResponse.unauthorized("Current password is incorrect").send(
-        res
+        res,
       );
     }
 

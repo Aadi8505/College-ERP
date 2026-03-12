@@ -28,6 +28,7 @@ const Student = () => {
   const userToken = localStorage.getItem("userToken");
 
   const [formData, setFormData] = useState({
+    enrollmentNo:"",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -221,6 +222,7 @@ const Student = () => {
 
   const editStudentHandler = (student) => {
     setFormData({
+      enrollmentNo:student.enrollmentNo||"",
       firstName: student.firstName || "",
       middleName: student.middleName || "",
       lastName: student.lastName || "",
@@ -277,6 +279,7 @@ const Student = () => {
 
   const resetForm = () => {
     setFormData({
+      enrollmentNo:"",
       firstName: "",
       middleName: "",
       lastName: "",
@@ -325,13 +328,14 @@ const Student = () => {
                   Enrollment Number
                 </label>
                 <input
-                  type="text"
-                  name="enrollmentNo"
-                  value={searchParams.enrollmentNo}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter enrollment number"
-                />
+  type="text"
+  value={formData.enrollmentNo}
+  onChange={(e) =>
+    handleFormInputChange("enrollmentNo", e.target.value)
+  }
+  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  required
+/>
               </div>
 
               <div>
@@ -514,7 +518,23 @@ const Student = () => {
                 addStudentHandler();
               }}
             >
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enrollment Number
+                </label>
+                <input
+                  type="text"
+                  name="enrollmentNo"
+                  value={formData.enrollmentNo}
+                  onChange={(e) =>
+                    handleFormInputChange("enrollmentNo", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     First Name
@@ -660,7 +680,6 @@ const Student = () => {
                       handleFormInputChange("bloodGroup", e.target.value)
                     }
                     className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
                   >
                     <option value="">Select Blood Group</option>
                     <option value="A+">A+</option>

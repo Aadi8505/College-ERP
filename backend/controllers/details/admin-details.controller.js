@@ -55,7 +55,7 @@ const registerAdminController = async (req, res, next) => {
   try {
     const { email, phone } = req.body;
 
-    const profile = req.file.filename;
+    const profile = req.file ? req.file.filename : null;
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return ApiResponse.badRequest("Invalid email format").send(res);
@@ -71,7 +71,7 @@ const registerAdminController = async (req, res, next) => {
 
     if (existingAdmin) {
       return ApiResponse.conflict(
-        "Admin with these details already exists"
+        "Admin with these details already exists",
       ).send(res);
     }
 
@@ -91,6 +91,17 @@ const registerAdminController = async (req, res, next) => {
     return ApiResponse.created(sanitizedUser, "Admin Details Added!").send(res);
   } catch (error) {
     console.error("Add Details Error: ", error);
+    if (error.code === 11000) {
+      return ApiResponse.conflict(
+        "Admin with these details already exists",
+      ).send(res);
+    }
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(", ");
+      return ApiResponse.badRequest(messages).send(res);
+    }
     return ApiResponse.internalServerError().send(res);
   }
 };
@@ -131,7 +142,7 @@ const updateDetailsController = async (req, res, next) => {
 
     if (password && password.length < 8) {
       return ApiResponse.badRequest(
-        "Password must be at least 8 characters long"
+        "Password must be at least 8 characters long",
       ).send(res);
     }
 
@@ -228,7 +239,7 @@ const sendForgetPasswordEmail = async (req, res) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "10m",
-      }
+      },
     );
 
     await resetToken.deleteMany({
@@ -257,7 +268,7 @@ const updatePasswordHandler = async (req, res) => {
     const { password } = req.body;
     if (!resetId || !password) {
       return ApiResponse.badRequest("Password and ResetId is Required").send(
-        res
+        res,
       );
     }
 
@@ -269,7 +280,7 @@ const updatePasswordHandler = async (req, res) => {
 
     const verifyToken = await jwt.verify(
       resetTkn.resetToken,
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
     );
 
     if (!verifyToken) {
@@ -303,13 +314,13 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     if (!currentPassword || !newPassword) {
       return ApiResponse.badRequest(
-        "Current password and new password are required"
+        "Current password and new password are required",
       ).send(res);
     }
 
     if (newPassword.length < 8) {
       return ApiResponse.badRequest(
-        "New password must be at least 8 characters long"
+        "New password must be at least 8 characters long",
       ).send(res);
     }
 
@@ -320,11 +331,11 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
     if (!isPasswordValid) {
       return ApiResponse.unauthorized("Current password is incorrect").send(
-        res
+        res,
       );
     }
 

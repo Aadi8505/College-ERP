@@ -52,32 +52,194 @@ const getAllDetailsController = async (req, res) => {
 
 const registerStudentController = async (req, res) => {
   try {
-    const profile = req.file.filename;
+    // Log incoming data for debugging
+    console.log(
+      "Student Registration - Incoming Data:",
+      JSON.stringify(req.body, null, 2),
+    );
 
-    const enrollmentNo = Math.floor(100000 + Math.random() * 900000);
-    const email = `${enrollmentNo}@gmail.com`;
-
-    const user = await studentDetails.create({
-      ...req.body,
-      profile,
-      password: "student123",
-      email,
+    const {
       enrollmentNo,
+      firstName,
+      middleName,
+      lastName,
+      phone,
+      semester,
+      branchId,
+      gender,
+      dob,
+      bloodGroup,
+      address,
+      city,
+      state,
+      pincode,
+      country,
+    } = req.body;
+
+    // Validate all required fields
+    const requiredFields = [
+      "enrollmentNo",
+      "firstName",
+      "middleName",
+      "lastName",
+      "phone",
+      "semester",
+      "branchId",
+      "gender",
+      "dob",
+      "address",
+      "city",
+      "state",
+      "pincode",
+      "country",
+    ];
+
+    for (const field of requiredFields) {
+      let value = req.body[field];
+
+      // Handle different data types and conversions
+      if (value === undefined || value === null) {
+        console.error(
+          `❌ Validation Failed: ${field} is undefined/null`,
+          value,
+        );
+        return ApiResponse.badRequest(`${field} is required`).send(res);
+      }
+
+      // Convert to string and trim if necessary
+      value = String(value).trim();
+
+      if (value === "" || value === "undefined" || value === "null") {
+        console.error(`❌ Validation Failed: ${field} is empty`, {
+          field,
+          received: req.body[field],
+          stringified: value,
+        });
+        return ApiResponse.badRequest(`${field} cannot be empty`).send(res);
+      }
+    }
+
+    console.log("✅ All required fields passed validation");
+
+    // Validate enrollment number - check from req.body directly
+    const enrollmentNoValue = req.body.enrollmentNo || enrollmentNo;
+    console.log("📋 EnrollmentNo check:", {
+      collected: enrollmentNo,
+      fromReqBody: req.body.enrollmentNo,
+      final: enrollmentNoValue,
     });
 
+    if (!enrollmentNoValue) {
+      return ApiResponse.badRequest(
+        "Enrollment number is missing after validation",
+      ).send(res);
+    }
+
+    const enrollmentStr = String(enrollmentNoValue).trim();
+    console.log("🔢 Enrollment string validation:", {
+      enrollmentStr,
+      isNumeric: /^\d+$/.test(enrollmentStr),
+    });
+
+    if (!/^\d+$/.test(enrollmentStr)) {
+      return ApiResponse.badRequest(
+        `Enrollment number must contain only digits, received: "${enrollmentStr}"`,
+      ).send(res);
+    }
+
+    // Validate phone format
+    const phoneStr = String(phone).trim();
+    console.log("📞 Phone validation:", {
+      phone,
+      phoneStr,
+      isValid: /^\d{10}$/.test(phoneStr),
+    });
+    if (!/^\d{10}$/.test(phoneStr)) {
+      return ApiResponse.badRequest(
+        `Phone number must be exactly 10 digits, received: "${phoneStr}" (${phoneStr?.length || 0} characters)`,
+      ).send(res);
+    }
+
+    console.log("✅ Phone validation passed");
+
+    // Check if enrollment number already exists
+    const existingStudent = await studentDetails.findOne({
+      enrollmentNo: Number(enrollmentStr),
+    });
+    if (existingStudent) {
+      console.warn(`⚠️ Enrollment number already exists: ${enrollmentStr}`);
+      return ApiResponse.conflict("Enrollment number already in use").send(res);
+    }
+
+    console.log("✅ Enrollment number is unique");
+
+    // Parse nested emergencyContact fields from FormData
+    const emergencyContact = {
+      name:
+        req.body["emergencyContact[name]"] ||
+        req.body.emergencyContact?.name ||
+        "",
+      relationship:
+        req.body["emergencyContact[relationship]"] ||
+        req.body.emergencyContact?.relationship ||
+        "",
+      phone:
+        req.body["emergencyContact[phone]"] ||
+        req.body.emergencyContact?.phone ||
+        "",
+    };
+
+    const profile = req.file ? req.file.filename : null;
+    const email = `${enrollmentStr}@gmail.com`;
+
+    // Convert enrollmentNo to number and semester to number
+    const studentData = {
+      enrollmentNo: Number(enrollmentStr),
+      firstName: firstName.trim(),
+      middleName: middleName.trim(),
+      lastName: lastName.trim(),
+      phone: phoneStr,
+      semester: Number(semester),
+      branchId,
+      gender: gender.toLowerCase(),
+      dob: new Date(dob),
+      bloodGroup: bloodGroup || null,
+      profile,
+      address: address.trim(),
+      city: city.trim(),
+      state: state.trim(),
+      pincode: pincode.trim(),
+      country: country.trim(),
+      emergencyContact,
+      email,
+      password: "student123",
+    };
+
+    const student = await studentDetails.create(studentData);
+
     const sanitizedUser = await studentDetails
-      .findById(user._id)
-      .select("-__v -password");
+      .findById(student._id)
+      .select("-password -__v");
 
     return ApiResponse.created(sanitizedUser, "Student Details Added!").send(
-      res
+      res,
     );
   } catch (error) {
-    console.error("Add Details Error: ", error);
+    console.error("Add Details Error:", error);
+    if (error.code === 11000) {
+      return ApiResponse.conflict(
+        "Student with this enrollment number already exists",
+      ).send(res);
+    }
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(", ");
+      return ApiResponse.badRequest(messages).send(res);
+    }
     return ApiResponse.internalServerError().send(res);
   }
 };
-
 const getMyDetailsController = async (req, res) => {
   try {
     const user = await studentDetails
@@ -115,7 +277,7 @@ const updateDetailsController = async (req, res) => {
 
     if (password && password.length < 8) {
       return ApiResponse.badRequest(
-        "Password must be at least 8 characters long"
+        "Password must be at least 8 characters long",
       ).send(res);
     }
 
@@ -149,7 +311,7 @@ const updateDetailsController = async (req, res) => {
 
       if (existingStudent) {
         return ApiResponse.conflict("Enrollment number already in use").send(
-          res
+          res,
         );
       }
     }
@@ -225,7 +387,7 @@ const sendForgetPasswordEmail = async (req, res) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "10m",
-      }
+      },
     );
 
     await resetToken.deleteMany({
@@ -254,7 +416,7 @@ const updatePasswordHandler = async (req, res) => {
     const { password } = req.body;
     if (!resetId || !password) {
       return ApiResponse.badRequest("Password and ResetId is Required").send(
-        res
+        res,
       );
     }
 
@@ -266,7 +428,7 @@ const updatePasswordHandler = async (req, res) => {
 
     const verifyToken = await jwt.verify(
       resetTkn.resetToken,
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
     );
 
     if (!verifyToken) {
@@ -332,7 +494,7 @@ const searchStudentsController = async (req, res) => {
     }
 
     return ApiResponse.success(students, "Students found successfully").send(
-      res
+      res,
     );
   } catch (error) {
     console.error("Search Students Error: ", error);
@@ -347,13 +509,13 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     if (!currentPassword || !newPassword) {
       return ApiResponse.badRequest(
-        "Current password and new password are required"
+        "Current password and new password are required",
       ).send(res);
     }
 
     if (newPassword.length < 8) {
       return ApiResponse.badRequest(
-        "New password must be at least 8 characters long"
+        "New password must be at least 8 characters long",
       ).send(res);
     }
 
@@ -364,11 +526,11 @@ const updateLoggedInPasswordController = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
     if (!isPasswordValid) {
       return ApiResponse.unauthorized("Current password is incorrect").send(
-        res
+        res,
       );
     }
 
