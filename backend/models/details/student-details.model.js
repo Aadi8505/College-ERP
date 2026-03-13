@@ -12,7 +12,7 @@ const studentDetailsSchema = new mongoose.Schema(
     },
     middleName: {
       type: String,
-      required: true,
+      required: false,
     },
     lastName: {
       type: String,
@@ -86,7 +86,7 @@ const studentDetailsSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 studentDetailsSchema.pre("save", async function (next) {

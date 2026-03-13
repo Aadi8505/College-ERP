@@ -328,14 +328,13 @@ const Student = () => {
                   Enrollment Number
                 </label>
                 <input
-  type="text"
-  value={formData.enrollmentNo}
-  onChange={(e) =>
-    handleFormInputChange("enrollmentNo", e.target.value)
-  }
-  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-  required
-/>
+                  type="text"
+                  name="enrollmentNo"
+                  value={searchParams.enrollmentNo}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter enrollment number"
+                />
               </div>
 
               <div>

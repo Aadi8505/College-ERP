@@ -80,7 +80,6 @@ const registerStudentController = async (req, res) => {
     const requiredFields = [
       "enrollmentNo",
       "firstName",
-      "middleName",
       "lastName",
       "phone",
       "semester",
@@ -464,7 +463,11 @@ const searchStudentsController = async (req, res) => {
     }
 
     if (enrollmentNo) {
-      query.enrollmentNo = enrollmentNo;
+      // Convert enrollmentNo to number for proper database matching
+      const enrollmentNoNum = Number(String(enrollmentNo).trim());
+      if (!isNaN(enrollmentNoNum)) {
+        query.enrollmentNo = enrollmentNoNum;
+      }
     }
 
     if (name) {
