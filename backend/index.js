@@ -1,4 +1,4 @@
-const connectToMongo = require("./database/db");
+const connectToMongo = require("./Database/db");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -14,7 +14,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_API_LINK,
     credentials: true,
-  })
+  }),
 );
 
 // API routes FIRST
