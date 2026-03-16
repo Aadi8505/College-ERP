@@ -33,6 +33,7 @@ const Exam = () => {
 
   useEffect(() => {
     getExamsHandler();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getExamsHandler = async () => {

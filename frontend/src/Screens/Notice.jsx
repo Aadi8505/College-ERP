@@ -61,6 +61,7 @@ const Notice = () => {
 
   useEffect(() => {
     getNotices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.pathname]);
 
   const openAddModal = () => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { FiLogIn } from "react-icons/fi";
-import axios from "axios";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { setUserToken } from "../redux/actions";

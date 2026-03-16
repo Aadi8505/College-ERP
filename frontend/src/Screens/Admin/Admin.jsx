@@ -43,6 +43,7 @@ const Admin = () => {
 
   useEffect(() => {
     getAdminsHandler();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAdminsHandler = async () => {

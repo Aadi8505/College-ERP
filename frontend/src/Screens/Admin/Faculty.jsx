@@ -49,6 +49,7 @@ const Faculty = () => {
   useEffect(() => {
     getFacultyHandler();
     getBranchHandler();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getBranchHandler = async () => {

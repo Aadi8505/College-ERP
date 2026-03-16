@@ -32,7 +32,6 @@ const Material = () => {
     branch: "",
     type: "",
   });
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchSubjects();
