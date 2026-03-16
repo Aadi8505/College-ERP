@@ -8,6 +8,7 @@ const AddMarks = () => {
   const [branches, setBranches] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const userToken = localStorage.getItem("userToken");
+  // eslint-disable-next-line no-unused-vars
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
