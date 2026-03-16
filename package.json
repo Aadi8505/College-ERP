@@ -1,0 +1,14 @@
+{
+  "name": "college-erp",
+  "version": "1.0.0",
+  "description": "College Management System - Root",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "dev": "cd backend && npm run dev",
+    "install-all": "npm install && cd backend && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
