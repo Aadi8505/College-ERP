@@ -1,4 +1,3 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { FiDownload } from "react-icons/fi";
 import Heading from "../../components/Heading";

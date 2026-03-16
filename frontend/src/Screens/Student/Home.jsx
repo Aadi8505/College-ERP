@@ -58,6 +58,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchUserDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, userToken]);
 
   const getMenuItemClass = (menuId) => {
@@ -98,7 +99,7 @@ const Home = () => {
     const pathMenuId = urlParams.get("page") || "home";
     const validMenu = MENU_ITEMS.find((item) => item.id === pathMenuId);
     setSelectedMenu(validMenu ? validMenu.id : "home");
-  }, [location.pathname]);
+  }, [location.search, location.pathname]);
 
   const handleMenuClick = (menuId) => {
     setSelectedMenu(menuId);
