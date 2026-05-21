@@ -1,71 +1,147 @@
+# 🎓 College ERP — Advanced College Management System
 
-# College Management System
+[![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue.svg?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/mern-stack)
+[![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary-lightgrey.svg?style=for-the-badge&logo=cloudinary)](https://cloudinary.com)
+[![JWT Auth](https://img.shields.io/badge/Auth-JWT-orange.svg?style=for-the-badge&logo=jsonwebtokens)](https://jwt.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)](https://www.mongodb.com/mern-stack)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-v14+-green)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-v17+-blue)](https://reactjs.org)
+A modern, highly secure, and feature-rich Enterprise Resource Planning (ERP) platform designed for educational institutions. Built on the MERN (MongoDB, Express, React, Node.js) stack, this application centralizes administrative, faculty, and student operations into a unified dashboard experience with robust Cloudinary asset management, streamlined batch organization, and role-based access control.
 
-A comprehensive MERN stack-based College Management System that helps manage academic activities, student information, faculty details, and administrative tasks. This system streamlines the management of educational institutions by providing a centralized platform for administrators, faculty, and students.
+---
 
-## Features
+## 🌟 Live Demo Preview
 
-### Admin Features
+Experience the platform immediately! A pre-configured student preview account has been set up for visitors to explore the dashboards, check academic profiles, view exam schedules, and download course materials.
 
-- Manage faculty accounts with detailed profiles and emergency contacts
-- Manage student accounts with enrollment numbers and academic details
-- Manage academic branches
-- Handle subject/course management by semester and branch
-- Generate and manage notices for students and faculty
-- Upload and manage timetables by branch and semester
-- Profile management and password updates
+> ### **Demo Credentials**
+> * 👤 **Role:** Student Viewer
+> * 📧 **Email:** `demo@gmail.com`
+> * 🔑 **Password:** `student123`
 
-### Faculty Features
+---
 
-- View and manage personal profile with emergency contacts
-- Upload and manage study materials (notes, assignments, syllabus)
-- Filter and organize materials by subject, semester, and type
-- Upload and manage timetables for their branches
-- Search and view student information by enrollment, name, or semester
-- View and respond to notices
-- Update profile and credentials
-- Password management and reset functionality
+## 📅 Table of Contents
 
-### Student Features
+1. [Architectural Overhauls & Upgrades](#-architectural-overhauls--upgrades)
+2. [Dashboard Features](#-dashboard-features)
+3. [Technology Stack](#%EF%B8%8F-technology-stack)
+4. [Project Structure](#%EF%B8%8F-project-structure)
+5. [Prerequisites](#-prerequisites)
+6. [Local Environment & Setup](#%EF%B8%8F-local-environment--setup)
+7. [Database Initialization & Seeders](#-database-initialization--seeders)
+8. [License](#-license)
 
-- View personal profile and academic details
-- Access study materials filtered by subject and type
-- View class timetables with download option
-- Access notices and announcements
-- Update profile information
-- Password management and reset functionality
+---
 
-## Tech Stack
+## 🔄 Architectural Overhauls & Upgrades
 
-- Frontend: React.js
-- Backend: Node.js, Express.js
-- Database: MongoDB
-- Authentication: JWT
+The codebase has undergone substantial restructuring and optimization to transform it from a basic prototype into a production-grade academic ERP:
 
-## Prerequisites
+1. **Unified User Schema & Role-Based Access Control (RBAC)**
+   * **The Change:** Consolidated three separate, fragmented database models (`AdminDetails`, `FacultyDetails`, `StudentDetails`) into a single, highly performant `User` collection.
+   * **Security:** Implemented backend `requireRole` middleware. All write/delete/update operations are protected with role verification (Admin, Faculty, Student), blocking unauthorized API access.
 
-- Node.js
-- MongoDB
-- npm
+2. **Automated Roll Number Generation**
+   * **The Change:** Replaced manual enrollment number input with automated, sequential roll number generation (e.g., `CSE101`, `ECE101`, `BCA102`).
+   * **How it works:** When registering a new student, the system fetches the branch identifier, scans the database for the highest serial number, and increments it automatically, guaranteeing zero duplicates.
 
-## Setup Instructions
+3. **Cloud-Based Asset Management (Cloudinary CDN)**
+   * **The Change:** Integrated **Cloudinary** for scalable, high-speed delivery of lecture notes, study materials, timetables, and exam schedules.
+   * **Stability:** Retains dynamic, local Multer filesystem creation as a fallback to prevent production crashes on hosting platforms like Render.
 
-Sample .env file is added in both backend and frontend, copy that variables and create `.env` in both the folders and then follow below given instructions
+4. **Semester-to-Batch ERP Migration**
+   * **The Change:** Transitioned all academic resource assignments (timetables, course materials, exams, grades) from dynamic "Semesters" to static "Batches" (e.g., `23`, `24`, `25`, `26`).
+   * **Rationale:** Aligns with modern university ERP architectures where documents stay attached to a student's graduating batch throughout their academic lifecycle, avoiding the need to migrate files every six months.
 
-1. Clone the repository:
+5. **UI Stability & Crash Prevention**
+   * **The Change:** Added deep optional chaining (`?.`) and fallback placeholders (`|| "N/A"`) on all profile cards and dashboards.
+   * **The Fix:** Prevented React render crashes due to unpopulated fields (e.g., salary, emergency contact details) and secured date-string formatting methods.
 
+6. **Dual-Layer Frontend Security**
+   * **The Change:** Implemented `ProtectedRoute` wrappers around React Router.
+   * **Stability:** Added lazy-loading states to dashboard homepages; no structural menus or sub-components are displayed until the client JWT is validated by the `/auth/my-details` backend API, preventing layout flashes.
+
+---
+
+## 💻 Dashboard Features
+
+### 🔑 Administrator Dashboard
+* **User Management:** Create, view, update, and delete Admin, Faculty, and Student accounts. Roll numbers are generated automatically on student creation.
+* **Academic Control:** Register and configure departments/branches, academic subjects, and course structures.
+* **Timetable Coordinator:** Upload timetable sheets assigned specifically by Branch and graduation Batch.
+* **Notices Board:** Author and broadcast campus-wide notices.
+* **Profile Manager:** Update administrative details and change login credentials.
+
+### 👨‍🏫 Faculty Dashboard
+* **Cloud Study Materials:** Upload, organize, and categorize lecture notes, assignment sheets, and course syllabi directly to Cloudinary.
+* **Student Finder:** Search the unified student database by Branch, Batch, name, or roll number to review details.
+* **Grade Management:** Filter students dynamically by subject and batch to input, update, and submit exam marks.
+* **Personal Profile:** Safely edit emergency contacts and review salary/payroll numbers.
+
+### 🎓 Student Dashboard
+* **Academic Hub:** View student profile details, registered Branch, and active Batch.
+* **Materials Locker:** Access, filter, and download study guides, lecture notes, and assignments uploaded by faculty.
+* **Timetable Previewer:** View and download batch-specific class timetables.
+* **Grades & Marks:** Track graded performance across different exams filtered by Batch.
+* **Notices Feed:** Read up-to-date notifications and announcements from college administration.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Frontend:** React.js, React Router v6, Context API, Vanilla CSS (Premium responsive themes), Tailwind CSS
+* **Backend:** Node.js, Express.js (REST API, MVC structure)
+* **Database:** MongoDB, Mongoose ODM
+* **Cloud Storage:** Cloudinary SDK (Media and Document hosting)
+* **Auth & Security:** JSON Web Tokens (JWT), bcrypt.js (Password hashing), CORS
+* **Notifications:** Nodemailer (SMTP password reset services)
+
+---
+
+## 📂 Project Structure
+
+```text
+college-management-system/
+├── backend/
+│   ├── Database/            # MongoDB connection configuration
+│   ├── controllers/         # Unified User, Notice, Timetable, Material, Exam, and Marks controllers
+│   ├── models/              # User (unified roles), Branch, Subject, Timetable, Material, Exam, Marks schemas
+│   ├── routes/              # Express Router files (auth, users, branches, subjects, notices, etc.)
+│   ├── middlewares/         # JWT parsing, RBAC (requireRole), and Multer file handlers
+│   ├── utils/               # Cloudinary integrations and helper functions
+│   ├── admin-seeder.js      # Seed file for initial Admin creation
+│   └── index.js             # Express application entrypoint
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Reusable UI elements and ProtectedRoute guard
+│   │   ├── Screens/         # Separate Admin, Faculty, and Student screen trees
+│   │   ├── context/         # AuthState provider and global context
+│   │   └── App.js           # React Router and application layout
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 📋 Prerequisites
+
+Before running the application locally, ensure you have installed:
+* **Node.js** (v14+ recommended)
+* **MongoDB** (Local instance or MongoDB Atlas cluster connection)
+* **npm** (Node package manager)
+
+---
+
+## ⚙️ Local Environment & Setup
+
+### 1. Clone the repository
 ```bash
 git clone <repository-url>
 cd College-Management-System
 ```
 
-2. Install dependencies:
-
+### 2. Install Project Dependencies
+Run install in both root folders:
 ```bash
 # Install backend dependencies
 cd backend
@@ -76,80 +152,66 @@ cd ../frontend
 npm install
 ```
 
-3. Create a `.env` file in the backend directory with the following variables:
-
-```
-MONGODB_URI =mongodb://127.0.0.1:27017/College-Management-System
-PORT = 4000
-FRONTEND_API_LINK = http://localhost:3000
-JWT_SECRET = THISISSECRET
-
-NODEMAILER_EMAIL =
-NODEMAILER_PASS =
-```
-
-4. Create a `.env` file in the frontend directory:
-
+### 3. Backend Environment Variables
+Create a file named `.env` in the `backend/` directory with the following variables:
 ```env
-REACT_APP_APILINK = http://localhost:4000/api
+# Database & Server Setup
+MONGODB_URI=mongodb://127.0.0.1:27017/College-Management-System
+PORT=4000
+FRONTEND_API_LINK=http://localhost:3000
+JWT_SECRET=YOUR_SUPER_SECURE_JWT_SECRET
 
-REACT_APP_MEDIA_LINK = http://localhost:4000/media
+# Cloudinary Integration
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
+# Nodemailer Setup (Optional for password reset)
+NODEMAILER_EMAIL=your-email@gmail.com
+NODEMAILER_PASS=your-gmail-app-password
 ```
 
-5. Start the development servers:
-
-```bash
-# Start backend server (from backend directory)
-npm run dev
-
-# Start frontend server (from frontend directory)
-npm start
+### 4. Frontend Environment Variables
+Create a file named `.env` in the `frontend/` directory with the following variables:
+```env
+REACT_APP_APILINK=http://localhost:4000/api
+REACT_APP_MEDIA_LINK=http://localhost:4000/media
 ```
 
-## Initial Setup
+### 5. Running the Application
+Open two separate terminal windows:
 
-1. Create an admin account using the seeder:
+* **Terminal 1: Start Backend Server**
+  ```bash
+  cd backend
+  npm run dev
+  ```
+* **Terminal 2: Start Frontend Server**
+  ```bash
+  cd frontend
+  npm start
+  ```
 
-```bash
-cd backend
-npm run seed
-```
+---
 
-This will create a default admin account with the following credentials:
+## 🗄️ Database Initialization & Seeders
 
-- Employee ID: 123456
-- Password: admin123
-- Email: admin@gmail.com
+To log in for the first time, you must seed the database with an Admin account. Make sure your local MongoDB instance is running, or that your Atlas URI is connected in `backend/.env`.
 
-## Project Structure
+1. **Seed the Admin account:**
+   ```bash
+   cd backend
+   npm run seed
+   ```
+   *(Ensure you have `"seed": "node admin-seeder.js"` configured in your `backend/package.json` scripts)*
 
-```
-college-management-system/
-├── backend/
-│   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middlewares/
-│   │   ├── utils/
-│   │   └── media/
-│   └── README.md
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── context/
-│   │   └── utils/
-│   └── public/
-└── README.md
+2. **Use these default credentials to log in as Admin:**
+   * 📧 **Email:** `admin@gmail.com`
+   * 🔑 **Password:** `admin123`
+   * 🆔 **Employee ID:** `123456`
 
+---
 
-## Contributing
+## 📝 License
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-
-
-# College-ERP
-MERN Stack College Management System
+This project is licensed under the [MIT License](LICENSE). Feel free to customize and expand it!
