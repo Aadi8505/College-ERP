@@ -24,26 +24,29 @@ const buildResetEmailHtml = (resetLink) => `
 `;
 
 /**
- * Send email via Resend HTTP API (works on all cloud platforms including Render).
+ * Send email via Brevo (Sendinblue) HTTP API.
+ * Works on ALL cloud platforms (Render, Vercel, Railway, etc.)
+ * Free tier: 300 emails/day, only requires sender email verification (no domain needed).
  * Uses Node's built-in https module — zero extra dependencies.
  */
-const sendViaResend = (apiKey, fromEmail, toEmail, subject, html) => {
+const sendViaBrevo = (apiKey, senderEmail, toEmail, subject, html) => {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
-      from: `College ERP <${fromEmail}>`,
-      to: [toEmail],
+      sender: { name: "College ERP", email: senderEmail },
+      to: [{ email: toEmail }],
       subject,
-      html,
+      htmlContent: html,
     });
 
     const options = {
-      hostname: "api.resend.com",
-      path: "/emails",
+      hostname: "api.brevo.com",
+      path: "/v3/smtp/email",
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "api-key": apiKey,
         "Content-Type": "application/json",
         "Content-Length": Buffer.byteLength(payload),
+        Accept: "application/json",
       },
     };
 
@@ -55,7 +58,7 @@ const sendViaResend = (apiKey, fromEmail, toEmail, subject, html) => {
           resolve(JSON.parse(body));
         } else {
           reject(
-            new Error(`Resend API error (${res.statusCode}): ${body}`),
+            new Error(`Brevo API error (${res.statusCode}): ${body}`),
           );
         }
       });
@@ -64,7 +67,7 @@ const sendViaResend = (apiKey, fromEmail, toEmail, subject, html) => {
     req.on("error", reject);
     req.setTimeout(15000, () => {
       req.destroy();
-      reject(new Error("Resend API request timed out"));
+      reject(new Error("Brevo API request timed out"));
     });
     req.write(payload);
     req.end();
@@ -108,7 +111,7 @@ const sendViaNodemailer = async (toEmail, subject, html) => {
  * Main entry point — automatically selects the best email transport.
  *
  * Priority:
- *   1. If RESEND_API_KEY is set → use Resend HTTP API (guaranteed to work on Render / Vercel / etc.)
+ *   1. If BREVO_API_KEY is set → use Brevo HTTP API (guaranteed to work on Render / Vercel / etc.)
  *   2. Otherwise fall back to Nodemailer SMTP (works locally)
  */
 const sendResetMail = async (email, resetToken, type) => {
@@ -121,20 +124,23 @@ const sendResetMail = async (email, resetToken, type) => {
     const subject = "Password Reset Request - College Management System";
     const html = buildResetEmailHtml(resetLink);
 
-    // ── Strategy 1: Resend HTTP API (cloud-safe) ──
-    if (process.env.RESEND_API_KEY) {
-      const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-      console.log("Sending reset email via Resend HTTP API to:", email);
-      const result = await sendViaResend(
-        process.env.RESEND_API_KEY,
-        fromEmail,
+    // ── Strategy 1: Brevo HTTP API (cloud-safe, no domain verification needed) ──
+    if (process.env.BREVO_API_KEY) {
+      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.NODEMAILER_EMAIL?.replace(/\s+/g, "");
+      if (!senderEmail) {
+        throw new Error("BREVO_SENDER_EMAIL or NODEMAILER_EMAIL must be set when using Brevo");
+      }
+      console.log("Sending reset email via Brevo HTTP API to:", email);
+      const result = await sendViaBrevo(
+        process.env.BREVO_API_KEY,
+        senderEmail,
         email,
         subject,
         html,
       );
-      console.log("Reset email sent successfully via Resend:", {
+      console.log("Reset email sent successfully via Brevo:", {
         to: email,
-        id: result.id,
+        messageId: result.messageId,
       });
       return result;
     }
@@ -142,7 +148,7 @@ const sendResetMail = async (email, resetToken, type) => {
     // ── Strategy 2: Nodemailer SMTP (local dev) ──
     if (!process.env.NODEMAILER_EMAIL || !process.env.NODEMAILER_PASS) {
       throw new Error(
-        "No email provider configured. Set RESEND_API_KEY (recommended for cloud) or NODEMAILER_EMAIL + NODEMAILER_PASS (for local).",
+        "No email provider configured. Set BREVO_API_KEY (recommended for cloud) or NODEMAILER_EMAIL + NODEMAILER_PASS (for local).",
       );
     }
 
