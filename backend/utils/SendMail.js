@@ -1,6 +1,14 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
+
+// Force Node.js to prefer IPv4 over IPv6 when resolving DNS lookups.
+// This resolves the ENETUNREACH error on host platforms like Render that do not support outbound IPv6.
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const sendResetMail = async (email, resetToken, type) => {
+
   try {
     // Validate required environment variables
     if (!process.env.NODEMAILER_EMAIL || !process.env.NODEMAILER_PASS) {
