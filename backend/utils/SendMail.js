@@ -17,13 +17,23 @@ const sendResetMail = async (email, resetToken, type) => {
       throw new Error("FRONTEND_API_LINK is not set");
     }
 
+    // Strip all spaces from email and password (useful since Google generates app passwords with spaces for readability)
+    const cleanedEmail = process.env.NODEMAILER_EMAIL.replace(/\s+/g, "");
+    const cleanedPass = process.env.NODEMAILER_PASS.replace(/\s+/g, "");
+
     const transporter = nodemailer.createTransport({
       service: "Gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: true,
       auth: {
-        user: process.env.NODEMAILER_EMAIL.trim(),
-        pass: process.env.NODEMAILER_PASS.trim(),
+        user: cleanedEmail,
+        pass: cleanedPass,
       },
+      connectionTimeout: 10000, // 10 seconds connection timeout
+      socketTimeout: 10000,     // 10 seconds socket timeout
     });
+
 
     // Verify connection configuration
     await transporter.verify();
