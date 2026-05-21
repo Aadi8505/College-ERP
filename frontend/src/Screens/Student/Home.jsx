@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { toast, Toaster } from "react-hot-toast";
-import Notice from "../Notice";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../redux/actions";
 import axiosWrapper from "../../utils/AxiosWrapper";
-import Timetable from "./Timetable";
-import Material from "./Material";
-import Profile from "./Profile";
-import Exam from "../Exam";
-import ViewMarks from "./ViewMarks";
 import { useNavigate, useLocation } from "react-router-dom";
+import Loading from "../../components/Loading";
+
+const Notice = lazy(() => import("../Notice"));
+const Timetable = lazy(() => import("./Timetable"));
+const Material = lazy(() => import("./Material"));
+const Profile = lazy(() => import("./Profile"));
+const Exam = lazy(() => import("../Exam"));
+const ViewMarks = lazy(() => import("./ViewMarks"));
 
 const MENU_ITEMS = [
   { id: "home", label: "Home", component: null },
@@ -24,9 +26,8 @@ const MENU_ITEMS = [
 const Home = () => {
   const [selectedMenu, setSelectedMenu] = useState("home");
   const [profileData, setProfileData] = useState();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch();
-  const userToken = localStorage.getItem("userToken");
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,14 +35,24 @@ const Home = () => {
     setIsLoading(true);
     try {
       toast.loading("Loading user details...");
-      const response = await axiosWrapper.get(`/student/my-details`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
-      });
+      const response = await axiosWrapper.get(`/auth/my-details`);
       if (response.data.success) {
-        setProfileData(response.data.data);
-        dispatch(setUserData(response.data.data));
+        const user = response.data.data;
+        if (user.role !== "student") {
+          toast.error("Access denied. Redirecting to your dashboard...");
+          setTimeout(() => {
+            if (user.role === "admin") {
+              navigate("/admin");
+            } else if (user.role === "faculty") {
+              navigate("/faculty");
+            } else {
+              navigate("/");
+            }
+          }, 1500);
+          return;
+        }
+        setProfileData(user);
+        dispatch(setUserData(user));
       } else {
         toast.error(response.data.message);
       }
@@ -59,7 +70,7 @@ const Home = () => {
   useEffect(() => {
     fetchUserDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, userToken]);
+  }, [dispatch]);
 
   const getMenuItemClass = (menuId) => {
     const isSelected = selectedMenu.toLowerCase() === menuId.toLowerCase();
@@ -77,21 +88,20 @@ const Home = () => {
   };
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">Loading...</div>
-      );
-    }
-
-    if (selectedMenu === "home" && profileData) {
-      return <Profile profileData={profileData} />;
-    }
-
-    const MenuItem = MENU_ITEMS.find(
-      (item) => item.label.toLowerCase() === selectedMenu.toLowerCase()
-    )?.component;
-
-    return MenuItem && <MenuItem />;
+    return (
+      <Suspense fallback={<Loading />}>
+        {selectedMenu === "home" && profileData ? (
+          <Profile profileData={profileData} />
+        ) : (
+          (() => {
+            const MenuItem = MENU_ITEMS.find(
+              (item) => item.label.toLowerCase() === selectedMenu.toLowerCase()
+            )?.component;
+            return MenuItem && <MenuItem />;
+          })()
+        )}
+      </Suspense>
+    );
   };
 
   useEffect(() => {
@@ -105,6 +115,33 @@ const Home = () => {
     setSelectedMenu(menuId);
     navigate(`/student?page=${menuId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-slate-600 font-medium">Verifying authorization...</p>
+        </div>
+        <Toaster position="bottom-center" />
+      </div>
+    );
+  }
+
+  if (!profileData || profileData.role !== "student") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-4 bg-white p-8 rounded-xl shadow-md border border-slate-100 max-w-md mx-4">
+          <div className="text-red-500 text-5xl mb-2">⚠️</div>
+          <h2 className="text-xl font-bold text-slate-800">Access Denied</h2>
+          <p className="text-slate-500 text-sm">
+            You do not have permission to access the student dashboard. Redirecting...
+          </p>
+        </div>
+        <Toaster position="bottom-center" />
+      </div>
+    );
+  }
 
   return (
     <>

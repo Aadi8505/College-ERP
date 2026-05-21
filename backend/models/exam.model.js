@@ -9,7 +9,7 @@ const examSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  semester: {
+  batch: {
     type: Number,
     required: true,
   },

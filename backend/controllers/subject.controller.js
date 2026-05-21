@@ -1,12 +1,13 @@
 const Subject = require("../models/subject.model");
+const Marks = require("../models/marks.model");
 const ApiResponse = require("../utils/ApiResponse");
 
 const getSubjectController = async (req, res) => {
   try {
-    const { branch, semester } = req.query;
+    const { branch, batch } = req.query;
     let query = {};
     if (branch) query.branch = branch;
-    if (semester) query.semester = semester;
+    if (batch) query.batch = batch;
     let subjects = await Subject.find(query).populate("branch");
     if (!subjects || subjects.length === 0) {
       return ApiResponse.error("No Subjects Found", 404).send(res);
@@ -18,9 +19,9 @@ const getSubjectController = async (req, res) => {
 };
 
 const addSubjectController = async (req, res) => {
-  const { name, code, branch, semester, credits } = req.body;
+  const { name, code, branch, batch, credits } = req.body;
 
-  if (!name || !code || !branch || !semester || !credits) {
+  if (!name || !code || !branch || !batch || !credits) {
     return ApiResponse.error("All fields are required", 400).send(res);
   }
 
@@ -34,12 +35,12 @@ const addSubjectController = async (req, res) => {
       name,
       code,
       branch,
-      semester,
+      batch,
       credits,
     });
 
     return ApiResponse.created(newSubject, "Subject Added Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
@@ -47,13 +48,13 @@ const addSubjectController = async (req, res) => {
 };
 
 const updateSubjectController = async (req, res) => {
-  const { name, code, branch, semester, credits } = req.body;
+  const { name, code, branch, batch, credits } = req.body;
   const updateFields = {};
 
   if (name) updateFields.name = name;
   if (code) updateFields.code = code;
   if (branch) updateFields.branch = branch;
-  if (semester) updateFields.semester = semester;
+  if (batch) updateFields.batch = batch;
   if (credits) updateFields.credits = credits;
 
   if (Object.keys(updateFields).length === 0) {
@@ -70,7 +71,7 @@ const updateSubjectController = async (req, res) => {
     }
 
     return ApiResponse.success(subject, "Subject Updated Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
@@ -83,7 +84,16 @@ const deleteSubjectController = async (req, res) => {
       return ApiResponse.error("Subject ID is required", 400).send(res);
     }
 
-    let subject = await Subject.findByIdAndDelete(req.params.id);
+    const subjectId = req.params.id;
+    const marksCount = await Marks.countDocuments({ subjectId });
+
+    if (marksCount > 0) {
+      return ApiResponse.conflict(
+        `Cannot delete: ${marksCount} marks records are linked to this subject.`,
+      ).send(res);
+    }
+
+    let subject = await Subject.findByIdAndDelete(subjectId);
     if (!subject) {
       return ApiResponse.error("Subject Not Found!", 404).send(res);
     }

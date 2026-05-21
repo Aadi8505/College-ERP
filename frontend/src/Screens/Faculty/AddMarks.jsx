@@ -7,13 +7,12 @@ import CustomButton from "../../components/CustomButton";
 const AddMarks = () => {
   const [branches, setBranches] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
-  const userToken = localStorage.getItem("userToken");
   // eslint-disable-next-line no-unused-vars
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedSemester, setSelectedSemester] = useState(null);
+  const [selectedBatch, setSelectedBatch] = useState(null);
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [masterMarksData, setMasterMarksData] = useState([]);
@@ -29,8 +28,8 @@ const AddMarks = () => {
     } else if (name === "subject") {
       const subject = subjects.find((s) => s._id === value);
       setSelectedSubject(subject);
-    } else if (name === "semester") {
-      setSelectedSemester(value);
+    } else if (name === "batch") {
+      setSelectedBatch(value);
     } else if (name === "exam") {
       const exam = exams.find((e) => e._id === value);
       setSelectedExam(exam);
@@ -41,9 +40,7 @@ const AddMarks = () => {
     try {
       toast.loading("Loading branches...");
       const response = await axiosWrapper.get("/branch", {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setBranches(response.data.data);
@@ -67,9 +64,7 @@ const AddMarks = () => {
       const response = await axiosWrapper.get(
         `/subject?branch=${selectedBranch?._id}`,
         {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
+          headers: {},
         }
       );
       if (response.data.success) {
@@ -92,11 +87,9 @@ const AddMarks = () => {
     try {
       toast.loading("Loading exams...");
       const response = await axiosWrapper.get(
-        `/exam?semester=${selectedSemester}`,
+        `/exam?batch=${selectedBatch}`,
         {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
+          headers: {},
         }
       );
       if (response.data.success) {
@@ -121,9 +114,9 @@ const AddMarks = () => {
     setStudents([]);
     try {
       const response = await axiosWrapper.get(
-        `/marks/students?branch=${selectedBranch?._id}&subject=${selectedSubject?._id}&semester=${selectedSemester}&examId=${selectedExam?._id}`,
+        `/marks/students?branch=${selectedBranch?._id}&subject=${selectedSubject?._id}&batch=${selectedBatch}&examId=${selectedExam?._id}`,
         {
-          headers: { Authorization: `Bearer ${userToken}` },
+          headers: {},
         }
       );
 
@@ -216,18 +209,12 @@ const AddMarks = () => {
         })
       );
 
-      const response = await axiosWrapper.post(
-        "/marks/bulk",
-        {
-          marks: marksToSubmit,
-          examId: selectedExam?._id,
-          subjectId: selectedSubject?._id,
-          semester: selectedSemester,
-        },
-        {
-          headers: { Authorization: `Bearer ${userToken}` },
-        }
-      );
+      const response = await axiosWrapper.post("/marks/bulk", {
+        marks: marksToSubmit,
+        examId: selectedExam?._id,
+        subjectId: selectedSubject?._id,
+        batch: selectedBatch,
+      });
 
       if (response.data.success) {
         toast.success("Marks submitted successfully!");
@@ -261,7 +248,7 @@ const AddMarks = () => {
   useEffect(() => {
     fetchBranches();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userToken]);
+  }, []);
 
   useEffect(() => {
     if (selectedBranch) {
@@ -271,11 +258,11 @@ const AddMarks = () => {
   }, [selectedBranch]);
 
   useEffect(() => {
-    if (selectedSemester) {
+    if (selectedBatch) {
       fetchExams();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSemester]);
+  }, [selectedBatch]);
 
   return (
     <div className="w-full mx-auto mt-10 flex justify-center items-start flex-col mb-10">
@@ -288,18 +275,18 @@ const AddMarks = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-[90%] mx-auto">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Semester
+                Batch
               </label>
               <select
-                name="semester"
-                value={selectedSemester || ""}
+                name="batch"
+                value={selectedBatch || ""}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Semester</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                  <option key={sem} value={sem}>
-                    Semester {sem}
+                <option value="">Select Batch</option>
+                {[23, 24, 25, 26].map((b) => (
+                  <option key={b} value={b}>
+                    Batch {b}
                   </option>
                 ))}
               </select>
@@ -387,7 +374,7 @@ const AddMarks = () => {
                 !selectedBranch ||
                 !selectedSubject ||
                 !selectedExam ||
-                !selectedSemester
+                !selectedBatch
               }
               variant="primary"
               onClick={handleSearch}
@@ -406,10 +393,10 @@ const AddMarks = () => {
               <div className="grid grid-cols-4 gap-4">
                 <div className="border p-3 rounded-md shadow">
                   <span className="text-sm text-gray-500">
-                    Branch and Semester:
+                    Branch and Batch:
                   </span>
                   <p className="text-gray-800">
-                    {selectedBranch?.branchId} - Semester {selectedSemester}
+                    {selectedBranch?.branchId} - Batch {selectedBatch}
                   </p>
                 </div>
 
@@ -474,31 +461,49 @@ const AddMarks = () => {
             </CustomButton>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 w-[100%] mx-auto">
-            {masterMarksData.map((student) => (
-              <div
-                key={student._id}
-                className="flex items-center justify-between w-full border rounded-md"
-              >
-                <p className="font-medium text-gray-700 flex items-center justify-center px-3 h-full py-2 rounded-md min-w-[120px] text-center">
-                  {student.enrollmentNo}
-                </p>
-                <input
-                  type="number"
-                  min={0}
-                  max={selectedExam?.totalMarks || 100}
-                  className="px-4 py-2 border rounded-md focus:outline-none bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 w-full m-2"
-                  value={marksData[student._id] || ""}
-                  placeholder="Enter Marks"
-                  onChange={(e) =>
-                    setMarksData({
-                      ...marksData,
-                      [student._id]: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-blue-50 border-b-2 border-blue-300">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Roll No</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Student Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Marks Out of {selectedExam?.totalMarks || 100}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {masterMarksData.map((student, index) => (
+                  <tr 
+                    key={student._id} 
+                    className={`border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
+                  >
+                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{student.rollNumber || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-800">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{student.firstName} {student.lastName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{student.email || '-'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <input
+                        type="number"
+                        min={0}
+                        max={selectedExam?.totalMarks || 100}
+                        className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none bg-white focus:ring-2 focus:ring-blue-500 text-center"
+                        value={marksData[student._id] || ""}
+                        placeholder="0"
+                        onChange={(e) =>
+                          setMarksData({
+                            ...marksData,
+                            [student._id]: e.target.value,
+                          })
+                        }
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <div className="flex flex-col items-center gap-4 bottom-0 left-0 right-0 bg-white p-4 border-t mt-10">

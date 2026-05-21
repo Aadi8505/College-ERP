@@ -10,12 +10,14 @@ const {
   deleteTimetableController,
 } = require("../controllers/timetable.controller");
 
+const requireRole = require("../middlewares/role.middleware");
+
 router.get("/", auth, getTimetableController);
 
-router.post("/", auth, upload.single("file"), addTimetableController);
+router.post("/", auth, requireRole("admin", "faculty"), upload.single("file"), addTimetableController);
 
-router.put("/:id", auth, upload.single("file"), updateTimetableController);
+router.put("/:id", auth, requireRole("admin", "faculty"), upload.single("file"), updateTimetableController);
 
-router.delete("/:id", auth, deleteTimetableController);
+router.delete("/:id", auth, requireRole("admin", "faculty"), deleteTimetableController);
 
 module.exports = router;

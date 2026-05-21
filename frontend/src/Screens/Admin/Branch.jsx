@@ -30,7 +30,6 @@ const Branch = () => {
       const response = await axiosWrapper.get(`/branch`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       if (response.data.success) {
@@ -60,7 +59,6 @@ const Branch = () => {
       toast.loading(isEditing ? "Updating Branch" : "Adding Branch");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
       };
       let response;
       if (isEditing) {
@@ -113,7 +111,6 @@ const Branch = () => {
       toast.loading("Deleting Branch");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
       };
       const response = await axiosWrapper.delete(
         `/branch/${selectedBranchId}`,

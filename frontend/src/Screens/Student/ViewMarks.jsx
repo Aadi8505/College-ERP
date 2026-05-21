@@ -7,21 +7,18 @@ import { useSelector } from "react-redux";
 const ViewMarks = () => {
   const userData = useSelector((state) => state.userData);
   const [dataLoading, setDataLoading] = useState(false);
-  const [selectedSemester, setSelectedSemester] = useState(
-    userData?.semester || 1
+  const [selectedBatch, setSelectedBatch] = useState(
+    userData?.batch || 23
   );
   const [marks, setMarks] = useState([]);
-  const userToken = localStorage.getItem("userToken");
 
-  const fetchMarks = async (semester) => {
+  const fetchMarks = async (batch) => {
     setDataLoading(true);
     toast.loading("Loading marks...");
     try {
       const response = await axiosWrapper.get(
-        `/marks/student?semester=${semester}`,
-        {
-          headers: { Authorization: `Bearer ${userToken}` },
-        }
+        `/marks/student?batch=${batch}`,
+        {}
       );
 
       if (response.data.success) {
@@ -38,14 +35,14 @@ const ViewMarks = () => {
   };
 
   useEffect(() => {
-    fetchMarks(userData?.semester || 1);
+    fetchMarks(userData?.batch || 23);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData?.semester]);
+  }, [userData?.batch]);
 
-  const handleSemesterChange = (e) => {
-    const semester = e.target.value;
-    setSelectedSemester(semester);
-    fetchMarks(semester);
+  const handleBatchChange = (e) => {
+    const batch = e.target.value;
+    setSelectedBatch(batch);
+    fetchMarks(batch);
   };
 
   const midTermMarks = marks.filter((mark) => mark.examId.examType === "mid");
@@ -56,15 +53,15 @@ const ViewMarks = () => {
       <div className="flex justify-between items-center w-full mb-6">
         <Heading title="View Marks" />
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">Semester:</label>
+          <label className="text-sm font-medium text-gray-700">Batch:</label>
           <select
-            value={selectedSemester || ""}
-            onChange={handleSemesterChange}
+            value={selectedBatch || ""}
+            onChange={handleBatchChange}
             className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-              <option key={sem} value={sem}>
-                Semester {sem}
+            {[23, 24, 25, 26].map((b) => (
+              <option key={b} value={b}>
+                Batch {b}
               </option>
             ))}
           </select>

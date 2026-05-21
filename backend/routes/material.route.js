@@ -9,9 +9,11 @@ const {
   deleteMaterialController,
 } = require("../controllers/material.controller");
 
+const requireRole = require("../middlewares/role.middleware");
+
 router.get("/", auth, getMaterialsController);
-router.post("/", auth, upload.single("file"), addMaterialController);
-router.put("/:id", auth, upload.single("file"), updateMaterialController);
-router.delete("/:id", auth, deleteMaterialController);
+router.post("/", auth, requireRole("admin", "faculty"), upload.single("file"), addMaterialController);
+router.put("/:id", auth, requireRole("admin", "faculty"), upload.single("file"), updateMaterialController);
+router.delete("/:id", auth, requireRole("admin", "faculty"), deleteMaterialController);
 
 module.exports = router;

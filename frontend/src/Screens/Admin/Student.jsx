@@ -13,7 +13,7 @@ const Student = () => {
   const [searchParams, setSearchParams] = useState({
     enrollmentNo: "",
     name: "",
-    semester: "",
+    batch: "",
     branch: "",
   });
   const [students, setStudents] = useState([]);
@@ -25,15 +25,14 @@ const Student = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [file, setFile] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const userToken = localStorage.getItem("userToken");
 
   const [formData, setFormData] = useState({
-    enrollmentNo:"",
+    email: "",
     firstName: "",
     middleName: "",
     lastName: "",
     phone: "",
-    semester: "",
+    batch: "",
     branchId: "",
     gender: "",
     dob: "",
@@ -61,9 +60,7 @@ const Student = () => {
     try {
       toast.loading("Loading branches...");
       const response = await axiosWrapper.get(`/branch`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setBranches(response.data.data);
@@ -91,12 +88,12 @@ const Student = () => {
   };
 
   const searchStudents = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
 
     if (
       !searchParams.enrollmentNo &&
       !searchParams.name &&
-      !searchParams.semester &&
+      !searchParams.batch &&
       !searchParams.branch
     ) {
       toast.error("Please select at least one filter");
@@ -106,12 +103,19 @@ const Student = () => {
     setDataLoading(true);
     setHasSearched(true);
     toast.loading("Searching students...");
+
+    const payload = {
+      searchQuery: searchParams.enrollmentNo || searchParams.name || "",
+      branchId: searchParams.branch || "",
+      batch: searchParams.batch || "",
+    };
+
     try {
       const response = await axiosWrapper.post(
-        `/student/search`,
-        searchParams,
+        `/users/search/students`,
+        payload,
         {
-          headers: { Authorization: `Bearer ${userToken}` },
+          headers: {},
         }
       );
 
@@ -157,7 +161,6 @@ const Student = () => {
       toast.loading(isEditing ? "Updating Student" : "Adding Student");
       const headers = {
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${userToken}`,
       };
 
       const formDataToSend = new FormData();
@@ -179,9 +182,13 @@ const Student = () => {
       }
 
       let response;
+      if (!isEditing) {
+        formDataToSend.append("role", "student");
+      }
+
       if (isEditing) {
         response = await axiosWrapper.patch(
-          `/student/${selectedStudentId}`,
+          `/users/${selectedStudentId}`,
           formDataToSend,
           {
             headers,
@@ -189,7 +196,7 @@ const Student = () => {
         );
       } else {
         response = await axiosWrapper.post(
-          `/student/register`,
+          `/users/register`,
           formDataToSend,
           {
             headers,
@@ -223,12 +230,12 @@ const Student = () => {
 
   const editStudentHandler = (student) => {
     setFormData({
-      enrollmentNo:student.enrollmentNo||"",
+      email: student.email || "",
       firstName: student.firstName || "",
       middleName: student.middleName || "",
       lastName: student.lastName || "",
       phone: student.phone || "",
-      semester: student.semester || "",
+      batch: student.batch || "",
       branchId: student.branchId?._id || "",
       gender: student.gender || "",
       dob: student.dob?.split("T")[0] || "",
@@ -256,10 +263,9 @@ const Student = () => {
       toast.loading("Deleting Student");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
       };
       const response = await axiosWrapper.delete(
-        `/student/${selectedStudentId}`,
+        `/users/${selectedStudentId}`,
         {
           headers,
         }
@@ -280,12 +286,12 @@ const Student = () => {
 
   const resetForm = () => {
     setFormData({
-      enrollmentNo:"",
+      email: "",
       firstName: "",
       middleName: "",
       lastName: "",
       phone: "",
-      semester: "",
+      batch: "",
       branchId: "",
       gender: "",
       dob: "",
@@ -326,7 +332,7 @@ const Student = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-[90%] mx-auto">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Enrollment Number
+                  Roll Number
                 </label>
                 <input
                   type="text"
@@ -354,18 +360,18 @@ const Student = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Semester
+                  Batch (Year Joined)
                 </label>
                 <select
-                  name="semester"
-                  value={searchParams.semester}
+                  name="batch"
+                  value={searchParams.batch}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Semester</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                      Semester {sem}
+                  <option value="">Select Batch</option>
+                  {[23, 24, 25, 26].map((batch) => (
+                    <option key={batch} value={batch}>
+                      Batch {batch}
                     </option>
                   ))}
                 </select>
@@ -426,8 +432,8 @@ const Student = () => {
                     <tr className="bg-gray-100">
                       <th className="px-6 py-3 border-b text-left">Profile</th>
                       <th className="px-6 py-3 border-b text-left">Name</th>
-                      <th className="px-6 py-3 border-b text-left">E. No</th>
-                      <th className="px-6 py-3 border-b text-left">Semester</th>
+                      <th className="px-6 py-3 border-b text-left">Roll No</th>
+                      <th className="px-6 py-3 border-b text-left">Batch</th>
                       <th className="px-6 py-3 border-b text-left">Branch</th>
                       <th className="px-6 py-3 border-b text-left">Email</th>
                       <th className="px-6 py-3 border-b text-center">
@@ -457,7 +463,7 @@ const Student = () => {
                           {student.enrollmentNo}
                         </td>
                         <td className="px-6 py-4 border-b">
-                          {student.semester}
+                          {student.batch}
                         </td>
                         <td className="px-6 py-4 border-b">
                           {student.branchId?.name}
@@ -520,16 +526,16 @@ const Student = () => {
             >
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Enrollment Number
+                  Email Address
                 </label>
                 <input
-                  type="text"
-                  name="enrollmentNo"
-                  value={formData.enrollmentNo}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={(e) =>
-                    handleFormInputChange("enrollmentNo", e.target.value)
+                    handleFormInputChange("email", e.target.value)
                   }
                   className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
@@ -596,20 +602,20 @@ const Student = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Semester
+                    Batch (Year Joined)
                   </label>
                   <select
-                    value={formData.semester}
+                    value={formData.batch}
                     onChange={(e) =>
-                      handleFormInputChange("semester", e.target.value)
+                      handleFormInputChange("batch", e.target.value)
                     }
                     className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="">Select Semester</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                      <option key={sem} value={sem}>
-                        Semester {sem}
+                    <option value="">Select Batch</option>
+                    {[23, 24, 25, 26].map((batch) => (
+                      <option key={batch} value={batch}>
+                        Batch {batch}
                       </option>
                     ))}
                   </select>
@@ -839,12 +845,7 @@ const Student = () => {
               <div className="mt-8 flex justify-between items-center gap-4">
                 <div>
                   <p className="text-sm">
-                    Default login will be{" "}
-                    <span className="font-bold">
-                      {formData.enrollmentNo || "enrollment_no"}@gmail.com
-                    </span>{" "}
-                    and password will be{" "}
-                    <span className="font-bold">student123</span>
+                    Default login email will be the <span className="font-bold">manually entered student email</span> and password will be <span className="font-bold">student123</span>
                   </p>
                 </div>
                 <div className="flex gap-4">

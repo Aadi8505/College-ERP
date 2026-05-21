@@ -1,23 +1,26 @@
 const Marks = require("../models/marks.model");
-const Student = require("../models/details/student-details.model");
+const User = require("../models/user.model");
+const ApiResponse = require("../utils/ApiResponse");
 
 const getMarksController = async (req, res) => {
   try {
-    const { studentId, semester, examId } = req.query;
+    const { studentId, batch, examId } = req.query;
 
-    const query = { student: studentId };
-    if (semester) {
-      query.semester = semester;
+    const query = {};
+    if (studentId) {
+      query.studentId = studentId;
     }
-
+    if (batch) {
+      query.batch = Number(batch);
+    }
     if (examId) {
       query.examId = examId;
     }
 
     const marks = await Marks.find(query)
-      .populate("branch", "name")
-      .populate("marks.subject", "name")
-      .populate("student", "firstName lastName enrollmentNo");
+      .populate("subjectId", "name")
+      .populate("studentId", "firstName lastName rollNumber")
+      .populate("examId", "name examType totalMarks");
 
     if (!marks || marks.length === 0) {
       return res.status(200).json({
@@ -43,16 +46,16 @@ const getMarksController = async (req, res) => {
 
 const addMarksController = async (req, res) => {
   try {
-    const { studentId, semester, branch, marks } = req.body;
+    const { studentId, batch, branch, marks } = req.body;
 
-    if (!studentId || !semester || !branch || !marks || !Array.isArray(marks)) {
+    if (!studentId || !batch || !branch || !marks || !Array.isArray(marks)) {
       return res.status(400).json({
         success: false,
         message: "Invalid input data",
       });
     }
 
-    const student = await Student.findById(studentId);
+    const student = await User.findOne({ _id: studentId, role: "student" });
     if (!student) {
       return res.status(404).json({
         success: false,
@@ -60,17 +63,27 @@ const addMarksController = async (req, res) => {
       });
     }
 
-    let existingMarks = await Marks.findOne({ student: studentId, semester });
+    const subjectId = marks[0]?.subjectId || null;
+    const examId = marks[0]?.examId || null;
+    const marksObtained = marks[0]?.marksObtained || 0;
+
+    let existingMarks = await Marks.findOne({
+      studentId,
+      batch,
+      subjectId,
+      examId,
+    });
 
     if (existingMarks) {
-      existingMarks.marks = marks;
+      existingMarks.marksObtained = marksObtained;
       await existingMarks.save();
     } else {
       existingMarks = await Marks.create({
-        student: studentId,
-        semester,
-        branch,
-        marks,
+        studentId,
+        batch,
+        subjectId,
+        examId,
+        marksObtained,
       });
     }
 
@@ -116,71 +129,73 @@ const deleteMarksController = async (req, res) => {
 
 const addBulkMarksController = async (req, res) => {
   try {
-    const { marks, examId, subjectId, semester } = req.body;
+    const { marks, examId, subjectId, batch } = req.body;
 
-    if (!marks || !Array.isArray(marks) || !examId || !subjectId || !semester) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid input data. Required: marks array, examId, subjectId, and semester",
-      });
+    if (!marks || !Array.isArray(marks) || !examId || !subjectId || !batch) {
+      return ApiResponse.badRequest(
+        "Invalid input data. Required: marks array, examId, subjectId, and batch",
+      ).send(res);
     }
 
-    const results = [];
-    for (const markData of marks) {
-      const existingMark = await Marks.findOne({
-        studentId: markData.studentId,
-        examId,
-        subjectId,
-        semester,
-      });
+    if (marks.length === 0) {
+      return ApiResponse.badRequest("Marks array cannot be empty").send(res);
+    }
 
-      if (existingMark) {
-        existingMark.marksObtained = markData.obtainedMarks;
-        await existingMark.save();
-        results.push(existingMark);
-      } else {
-        const newMark = await Marks.create({
+    const operations = marks.map((markData) => ({
+      updateOne: {
+        filter: {
           studentId: markData.studentId,
           examId,
           subjectId,
-          semester,
-          marksObtained: markData.obtainedMarks,
-        });
-        results.push(newMark);
-      }
-    }
+          batch,
+        },
+        update: {
+          $set: {
+            marksObtained: markData.obtainedMarks,
+            studentId: markData.studentId,
+            examId,
+            subjectId,
+            batch,
+          },
+        },
+        upsert: true,
+      },
+    }));
 
-    res.json({
-      success: true,
-      message: "Marks submitted successfully",
-      data: results,
-    });
+    const result = await Marks.bulkWrite(operations);
+
+    return ApiResponse.success(
+      {
+        modified: result.modifiedCount,
+        inserted: result.upsertedCount,
+      },
+      "Marks saved successfully",
+    ).send(res);
   } catch (error) {
     console.error("Error in addBulkMarksController:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Error submitting marks",
-    });
+    return ApiResponse.error(error.message || "Error submitting marks").send(
+      res,
+    );
   }
 };
 
 const getStudentsWithMarksController = async (req, res) => {
   try {
-    const { branch, subject, semester, examId } = req.query;
+    const { branch, subject, batch, examId } = req.query;
 
-    if (!branch || !subject || !semester || !examId) {
+    if (!branch || !subject || !batch || !examId) {
       return res.status(400).json({
         success: false,
         message:
-          "Missing required parameters: branch, subject, semester, and examId are required",
+          "Missing required parameters: branch, subject, batch, and examId are required",
       });
     }
 
-    const students = await Student.find({
+    const students = await User.find({
+      role: "student",
       branchId: branch,
-      semester: Number(semester),
-    }).select("_id enrollmentNo firstName lastName");
+      batch: Number(batch),
+    }).select("_id rollNumber firstName lastName email");
 
     if (!students || students.length === 0) {
       return res.status(200).json({
@@ -194,12 +209,12 @@ const getStudentsWithMarksController = async (req, res) => {
       studentId: { $in: students.map((s) => s._id) },
       examId,
       subjectId: subject,
-      semester: Number(semester),
+      batch: Number(batch),
     });
 
     const studentsWithMarks = students.map((student) => {
       const studentMarks = marks.find(
-        (m) => m.studentId.toString() === student._id.toString()
+        (m) => m.studentId.toString() === student._id.toString(),
       );
       return {
         ...student.toObject(),
@@ -223,19 +238,19 @@ const getStudentsWithMarksController = async (req, res) => {
 
 const getStudentMarksController = async (req, res) => {
   try {
-    const { semester } = req.query;
+    const { batch } = req.query;
     const studentId = req.userId;
 
-    if (!semester) {
+    if (!batch) {
       return res.status(400).json({
         success: false,
-        message: "Semester is required",
+        message: "Batch is required",
       });
     }
 
     const marks = await Marks.find({
       studentId,
-      semester: Number(semester),
+      batch: Number(batch),
     })
       .populate("subjectId", "name")
       .populate("examId", "name examType totalMarks");
@@ -244,7 +259,7 @@ const getStudentMarksController = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: [],
-        message: "No marks found for this semester",
+        message: "No marks found for this batch",
       });
     }
 

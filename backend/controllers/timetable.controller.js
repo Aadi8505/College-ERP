@@ -3,10 +3,10 @@ const ApiResponse = require("../utils/ApiResponse");
 
 const getTimetableController = async (req, res) => {
   try {
-    const { semester, branch } = req.query;
+    const { batch, branch } = req.query;
     let query = {};
 
-    if (semester) query.semester = semester;
+    if (batch) query.batch = batch;
     if (branch) query.branch = branch;
 
     const timetables = await Timetable.find(query)
@@ -19,7 +19,7 @@ const getTimetableController = async (req, res) => {
 
     return ApiResponse.success(
       timetables,
-      "Timetables retrieved successfully"
+      "Timetables retrieved successfully",
     ).send(res);
   } catch (error) {
     console.error("Get Timetable Error: ", error);
@@ -29,44 +29,42 @@ const getTimetableController = async (req, res) => {
 
 const addTimetableController = async (req, res) => {
   try {
-    const { semester, branch } = req.body;
+    const { batch, branch } = req.body;
 
-    if (!semester || !branch) {
-      return ApiResponse.badRequest("Semester and branch are required").send(
-        res
-      );
+    if (!batch || !branch) {
+      return ApiResponse.badRequest("Batch and branch are required").send(res);
     }
 
     if (!req.file) {
       return ApiResponse.badRequest("Timetable file is required").send(res);
     }
 
-    let timetable = await Timetable.findOne({ semester, branch });
+    let timetable = await Timetable.findOne({ batch, branch });
 
     if (timetable) {
       timetable = await Timetable.findByIdAndUpdate(
         timetable._id,
         {
-          semester,
+          batch,
           branch,
           link: req.file.filename,
         },
-        { new: true }
+        { new: true },
       );
       return ApiResponse.success(
         timetable,
-        "Timetable updated successfully"
+        "Timetable updated successfully",
       ).send(res);
     }
 
     timetable = await Timetable.create({
-      semester,
+      batch,
       branch,
       link: req.file.filename,
     });
 
     return ApiResponse.created(timetable, "Timetable added successfully").send(
-      res
+      res,
     );
   } catch (error) {
     console.error("Add Timetable Error: ", error);
@@ -77,7 +75,7 @@ const addTimetableController = async (req, res) => {
 const updateTimetableController = async (req, res) => {
   try {
     const { id } = req.params;
-    const { semester, branch } = req.body;
+    const { batch, branch } = req.body;
 
     if (!id) {
       return ApiResponse.badRequest("Timetable ID is required").send(res);
@@ -86,11 +84,11 @@ const updateTimetableController = async (req, res) => {
     const timetable = await Timetable.findByIdAndUpdate(
       id,
       {
-        semester,
+        batch,
         branch,
         link: req.file ? req.file.filename : undefined,
       },
-      { new: true }
+      { new: true },
     );
 
     if (!timetable) {
@@ -99,7 +97,7 @@ const updateTimetableController = async (req, res) => {
 
     return ApiResponse.success(
       timetable,
-      "Timetable updated successfully"
+      "Timetable updated successfully",
     ).send(res);
   } catch (error) {
     console.error("Update Timetable Error: ", error);
@@ -122,7 +120,7 @@ const deleteTimetableController = async (req, res) => {
     }
 
     return ApiResponse.success(null, "Timetable deleted successfully").send(
-      res
+      res,
     );
   } catch (error) {
     console.error("Delete Timetable Error: ", error);

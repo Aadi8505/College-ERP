@@ -1,4 +1,4 @@
-const adminDetails = require("./models/details/admin-details.model");
+const User = require("./models/user.model");
 const connectToMongo = require("./Database/db");
 const mongoose = require("mongoose");
 
@@ -6,13 +6,14 @@ const seedData = async () => {
   try {
     await connectToMongo();
 
-    // Clear existing admin data
-    await adminDetails.deleteMany({});
+    // Clear existing admin with this email or role
+    await User.deleteMany({ role: "admin" });
 
     const password = "admin123";
-    const employeeId = 123456;
+    const employeeId = "ADM-S101";
 
     const adminDetail = {
+      role: "admin",
       employeeId: employeeId,
       firstName: "Sundar",
       middleName: "R",
@@ -41,7 +42,7 @@ const seedData = async () => {
       password: password,
     };
 
-    await adminDetails.create(adminDetail);
+    await User.create(adminDetail);
 
     console.log("\n=== Admin Credentials ===");
     console.log("Employee ID:", employeeId);

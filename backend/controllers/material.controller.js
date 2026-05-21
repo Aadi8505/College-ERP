@@ -3,12 +3,12 @@ const ApiResponse = require("../utils/ApiResponse");
 
 const getMaterialsController = async (req, res) => {
   try {
-    const { subject, faculty, semester, branch, type } = req.query;
+    const { subject, faculty, batch, branch, type } = req.query;
     let query = {};
 
     if (subject) query.subject = subject;
     if (faculty) query.faculty = faculty;
-    if (semester) query.semester = semester;
+    if (batch) query.batch = batch;
     if (branch) query.branch = branch;
     if (type) query.type = type;
 
@@ -24,7 +24,7 @@ const getMaterialsController = async (req, res) => {
 
     return ApiResponse.success(
       materials,
-      "Materials retrieved successfully"
+      "Materials retrieved successfully",
     ).send(res);
   } catch (error) {
     console.error("Get Materials Error: ", error);
@@ -34,9 +34,9 @@ const getMaterialsController = async (req, res) => {
 
 const addMaterialController = async (req, res) => {
   try {
-    const { title, subject, semester, branch, type } = req.body;
+    const { title, subject, batch, branch, type } = req.body;
 
-    if (!title || !subject || !semester || !branch || !type) {
+    if (!title || !subject || !batch || !branch || !type) {
       return ApiResponse.badRequest("All fields are required").send(res);
     }
 
@@ -52,7 +52,7 @@ const addMaterialController = async (req, res) => {
       title,
       subject,
       faculty: req.userId, // From auth middleware
-      semester,
+      batch,
       branch,
       type,
       file: req.file.filename,
@@ -65,7 +65,7 @@ const addMaterialController = async (req, res) => {
 
     return ApiResponse.created(
       populatedMaterial,
-      "Material added successfully"
+      "Material added successfully",
     ).send(res);
   } catch (error) {
     console.error("Add Material Error: ", error);
@@ -76,7 +76,7 @@ const addMaterialController = async (req, res) => {
 const updateMaterialController = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, subject, semester, branch, type } = req.body;
+    const { title, subject, batch, branch, type } = req.body;
 
     if (!id) {
       return ApiResponse.badRequest("Material ID is required").send(res);
@@ -90,14 +90,14 @@ const updateMaterialController = async (req, res) => {
 
     if (material.faculty.toString() !== req.userId) {
       return ApiResponse.unauthorized(
-        "You are not authorized to update this material"
+        "You are not authorized to update this material",
       ).send(res);
     }
 
     const updateData = {};
     if (title) updateData.title = title;
     if (subject) updateData.subject = subject;
-    if (semester) updateData.semester = semester;
+    if (batch) updateData.batch = batch;
     if (branch) updateData.branch = branch;
     if (type) {
       if (!["notes", "assignment", "syllabus", "other"].includes(type)) {
@@ -116,7 +116,7 @@ const updateMaterialController = async (req, res) => {
 
     return ApiResponse.success(
       updatedMaterial,
-      "Material updated successfully"
+      "Material updated successfully",
     ).send(res);
   } catch (error) {
     console.error("Update Material Error: ", error);
@@ -140,7 +140,7 @@ const deleteMaterialController = async (req, res) => {
 
     if (material.faculty.toString() !== req.userId) {
       return ApiResponse.unauthorized(
-        "You are not authorized to delete this material"
+        "You are not authorized to delete this material",
       ).send(res);
     }
 

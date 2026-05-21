@@ -21,14 +21,14 @@ const Material = () => {
   const [formData, setFormData] = useState({
     title: "",
     subject: "",
-    semester: "",
+    batch: "",
     branch: "",
     type: "notes",
   });
   const [file, setFile] = useState(null);
   const [filters, setFilters] = useState({
     subject: "",
-    semester: "",
+    batch: "",
     branch: "",
     type: "",
   });
@@ -49,7 +49,6 @@ const Material = () => {
       const response = await axiosWrapper.get("/subject", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       if (response.data.success) {
@@ -74,7 +73,6 @@ const Material = () => {
       const response = await axiosWrapper.get("/branch", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       if (response.data.success) {
@@ -104,7 +102,6 @@ const Material = () => {
       const response = await axiosWrapper.get(`/material?${queryParams}`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       if (response.data.success) {
@@ -147,7 +144,7 @@ const Material = () => {
     setFormData({
       title: "",
       subject: "",
-      semester: "",
+      batch: "",
       branch: "",
       type: "notes",
     });
@@ -181,7 +178,6 @@ const Material = () => {
         await axiosWrapper.post("/material", formDataToSend, {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
           },
         });
         toast.success("Material added successfully");
@@ -202,9 +198,9 @@ const Material = () => {
     setEditingMaterial(material);
     setFormData({
       title: material.title,
-      subject: material.subject._id,
-      semester: material.semester,
-      branch: material.branch._id,
+      subject: material.subject?._id || "",
+      batch: material.batch,
+      branch: material.branch?._id || "",
       type: material.type,
     });
     setShowModal(true);
@@ -215,7 +211,6 @@ const Material = () => {
       await axiosWrapper.delete(`/material/${selectedMaterialId}`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       toast.success("Material deleted successfully");
@@ -251,7 +246,7 @@ const Material = () => {
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Subjects</option>
-              {subjects.map((subject) => (
+              {subjects.filter(Boolean).map((subject) => (
                 <option key={subject._id} value={subject._id}>
                   {subject.name}
                 </option>
@@ -270,7 +265,7 @@ const Material = () => {
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Branches</option>
-              {branches.map((branch) => (
+              {branches.filter(Boolean).map((branch) => (
                 <option key={branch._id} value={branch._id}>
                   {branch.name}
                 </option>
@@ -280,18 +275,18 @@ const Material = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Semester
+              Filter by Batch
             </label>
             <select
-              name="semester"
-              value={filters.semester}
+              name="batch"
+              value={filters.batch}
               onChange={handleFilterChange}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Semesters</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                <option key={sem} value={sem}>
-                  Semester {sem}
+              <option value="">All Batches</option>
+              {[23, 24, 25, 26].map((batch) => (
+                <option key={batch} value={batch}>
+                  Batch {batch}
                 </option>
               ))}
             </select>
@@ -330,14 +325,14 @@ const Material = () => {
                 <th className="py-4 px-6 text-left font-semibold">File</th>
                 <th className="py-4 px-6 text-left font-semibold">Title</th>
                 <th className="py-4 px-6 text-left font-semibold">Subject</th>
-                <th className="py-4 px-6 text-left font-semibold">Semester</th>
+                <th className="py-4 px-6 text-left font-semibold">Batch</th>
                 <th className="py-4 px-6 text-left font-semibold">Branch</th>
                 <th className="py-4 px-6 text-left font-semibold">Type</th>
                 <th className="py-4 px-6 text-left font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {materials.map((material) => (
+              {materials.filter(Boolean).map((material) => (
                 <tr key={material._id} className="border-b hover:bg-blue-50">
                   <td className="py-4 px-6">
                     <CustomButton
@@ -352,9 +347,13 @@ const Material = () => {
                     </CustomButton>
                   </td>
                   <td className="py-4 px-6">{material.title}</td>
-                  <td className="py-4 px-6">{material.subject.name}</td>
-                  <td className="py-4 px-6">{material.semester}</td>
-                  <td className="py-4 px-6">{material.branch.name}</td>
+                  <td className="py-4 px-6">
+                    {material.subject?.name || "Unknown"}
+                  </td>
+                  <td className="py-4 px-6">{material.batch}</td>
+                  <td className="py-4 px-6">
+                    {material.branch?.name || "Unknown"}
+                  </td>
                   <td className="py-4 px-6 capitalize">{material.type}</td>
                   <td className="py-4 px-6">
                     <div className="flex gap-4">
@@ -429,7 +428,7 @@ const Material = () => {
                     required
                   >
                     <option value="">Select Subject</option>
-                    {subjects.map((subject) => (
+                    {subjects.filter(Boolean).map((subject) => (
                       <option key={subject._id} value={subject._id}>
                         {subject.name}
                       </option>
@@ -449,7 +448,7 @@ const Material = () => {
                     required
                   >
                     <option value="">Select Branch</option>
-                    {branches.map((branch) => (
+                    {branches.filter(Boolean).map((branch) => (
                       <option key={branch._id} value={branch._id}>
                         {branch.name}
                       </option>
@@ -459,19 +458,19 @@ const Material = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Semester
+                    Batch
                   </label>
                   <select
-                    name="semester"
-                    value={formData.semester}
+                    name="batch"
+                    value={formData.batch}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="">Select Semester</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                      <option key={sem} value={sem}>
-                        Semester {sem}
+                    <option value="">Select Batch</option>
+                    {[23, 24, 25, 26].map((batch) => (
+                      <option key={batch} value={batch}>
+                        Batch {batch}
                       </option>
                     ))}
                   </select>

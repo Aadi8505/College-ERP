@@ -11,12 +11,12 @@ const TimeTable = new mongoose.Schema(
       ref: "Branch",
       required: true,
     },
-    semester: {
+    batch: {
       type: Number,
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Timetable", TimeTable);

@@ -42,7 +42,6 @@ const Faculty = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedFacultyId, setSelectedFacultyId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const userToken = localStorage.getItem("userToken");
   const [file, setFile] = useState(null);
   const [dataLoading, setDataLoading] = useState(null);
 
@@ -56,9 +55,7 @@ const Faculty = () => {
     try {
       setDataLoading(true);
       const response = await axiosWrapper.get(`/branch`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setBranches(response.data.data);
@@ -80,10 +77,8 @@ const Faculty = () => {
   const getFacultyHandler = async () => {
     try {
       toast.loading("Loading faculty...");
-      const response = await axiosWrapper.get(`/faculty`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+      const response = await axiosWrapper.get(`/users?role=faculty`, {
+        headers: {},
       });
       if (response.data.success) {
         setFaculty(response.data.data);
@@ -106,7 +101,6 @@ const Faculty = () => {
       toast.loading(isEditing ? "Updating Faculty" : "Adding Faculty");
       const headers = {
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${userToken}`,
       };
 
       const formData = new FormData();
@@ -127,17 +121,21 @@ const Faculty = () => {
         formData.append("file", file);
       }
 
+      if (!isEditing) {
+        formData.append("role", "faculty");
+      }
+
       let response;
       if (isEditing) {
         response = await axiosWrapper.patch(
-          `/faculty/${selectedFacultyId}`,
+          `/users/${selectedFacultyId}`,
           formData,
           {
             headers,
           }
         );
       } else {
-        response = await axiosWrapper.post(`/faculty/register`, formData, {
+        response = await axiosWrapper.post(`/users/register`, formData, {
           headers,
         });
       }
@@ -203,10 +201,9 @@ const Faculty = () => {
       toast.loading("Deleting Faculty");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
       };
       const response = await axiosWrapper.delete(
-        `/faculty/${selectedFacultyId}`,
+        `/users/${selectedFacultyId}`,
         {
           headers,
         }

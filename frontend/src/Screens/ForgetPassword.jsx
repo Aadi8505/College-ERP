@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+
 import toast, { Toaster } from "react-hot-toast";
 import axiosWrapper from "../utils/AxiosWrapper";
 import CustomButton from "../components/CustomButton";
@@ -29,16 +29,9 @@ const UserTypeSelector = ({ selected, onSelect }) => (
 );
 
 const ForgetPassword = () => {
-  const navigate = useNavigate();
-  const userToken = localStorage.getItem("userToken");
+  
   const [selected, setSelected] = useState(USER_TYPES.STUDENT);
   const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    if (userToken) {
-      navigate(`/${localStorage.getItem("userType")}`);
-    }
-  }, [userToken, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +46,7 @@ const ForgetPassword = () => {
         "Content-Type": "application/json",
       };
       const resp = await axiosWrapper.post(
-        `/${selected.toLowerCase()}/forget-password`,
+        "/auth/forget-password",
         { email },
         {
           headers: headers,

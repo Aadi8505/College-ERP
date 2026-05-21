@@ -1,0 +1,17 @@
+No auth middleware! Anyone can register new admins, faculty, or students without being authenticated.
+The auth middleware only verifies the JWT is valid. It doesn't check if the user is an admin, faculty, or student. Any authenticated user can call any endpoint.
+bulkwrite for marks update
+roll number auto increment,
+email manually assign
+cloudinary
+better user interface for update marks
+cascadig on marks
+implment api response handler for all
+
+
+
+
+
+// write notes for business logic file
+// security pracitces file notes and important follow up questions
+// error handling file , toast

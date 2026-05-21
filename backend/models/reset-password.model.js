@@ -5,12 +5,7 @@ const ResetPassword = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      refPath: "type",
-    },
-    type: {
-      type: String,
-      required: true,
-      enum: ["AdminDetails", "FacultyDetails", "StudentDetails"],
+      ref: "User",
     },
     resetToken: {
       type: String,

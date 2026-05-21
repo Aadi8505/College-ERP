@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const marksSchema = new mongoose.Schema({
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "StudentDetails",
+    ref: "User",
     required: true,
   },
   subjectId: {
@@ -15,7 +15,7 @@ const marksSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  semester: {
+  batch: {
     type: Number,
     required: true,
   },

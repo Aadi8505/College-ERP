@@ -1,18 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { toast, Toaster } from "react-hot-toast";
-import Notice from "../Notice";
-import Student from "./Student";
-import Faculty from "./Faculty";
-import Subjects from "./Subject";
-import Admin from "./Admin";
-import Branch from "./Branch";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../redux/actions";
 import axiosWrapper from "../../utils/AxiosWrapper";
-import Profile from "./Profile";
-import Exam from "../Exam";
 import { useNavigate, useLocation } from "react-router-dom";
+import Loading from "../../components/Loading";
+
+const Notice = lazy(() => import("../Notice"));
+const Student = lazy(() => import("./Student"));
+const Faculty = lazy(() => import("./Faculty"));
+const Subjects = lazy(() => import("./Subject"));
+const Admin = lazy(() => import("./Admin"));
+const Branch = lazy(() => import("./Branch"));
+const Profile = lazy(() => import("./Profile"));
+const Exam = lazy(() => import("../Exam"));
 
 const MENU_ITEMS = [
   { id: "home", label: "Home", component: Profile },
@@ -30,22 +32,31 @@ const Home = () => {
   const location = useLocation();
   const [selectedMenu, setSelectedMenu] = useState("home");
   const [profileData, setProfileData] = useState();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch();
-  const userToken = localStorage.getItem("userToken");
 
   const fetchUserDetails = async () => {
     setIsLoading(true);
     try {
       toast.loading("Loading user details...");
-      const response = await axiosWrapper.get(`/admin/my-details`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
-      });
+      const response = await axiosWrapper.get(`/auth/my-details`);
       if (response.data.success) {
-        setProfileData(response.data.data);
-        dispatch(setUserData(response.data.data));
+        const user = response.data.data;
+        if (user.role !== "admin") {
+          toast.error("Access denied. Redirecting to your dashboard...");
+          setTimeout(() => {
+            if (user.role === "student") {
+              navigate("/student");
+            } else if (user.role === "faculty") {
+              navigate("/faculty");
+            } else {
+              navigate("/");
+            }
+          }, 1500);
+          return;
+        }
+        setProfileData(user);
+        dispatch(setUserData(user));
       } else {
         toast.error(response.data.message);
       }
@@ -63,7 +74,7 @@ const Home = () => {
   useEffect(() => {
     fetchUserDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, userToken]);
+  }, [dispatch]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -88,27 +99,52 @@ const Home = () => {
   };
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">Loading...</div>
-      );
-    }
-
     const MenuItem = MENU_ITEMS.find(
       (item) => item.id === selectedMenu
     )?.component;
 
-    if (selectedMenu === "home" && profileData) {
-      return <Profile profileData={profileData} />;
-    }
-
-    return MenuItem && <MenuItem />;
+    return (
+      <Suspense fallback={<Loading />}>
+        {selectedMenu === "home" && profileData ? (
+          <Profile profileData={profileData} />
+        ) : (
+          MenuItem && <MenuItem />
+        )}
+      </Suspense>
+    );
   };
 
   const handleMenuClick = (menuId) => {
     setSelectedMenu(menuId);
     navigate(`/admin?page=${menuId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-slate-600 font-medium">Verifying authorization...</p>
+        </div>
+        <Toaster position="bottom-center" />
+      </div>
+    );
+  }
+
+  if (!profileData || profileData.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-4 bg-white p-8 rounded-xl shadow-md border border-slate-100 max-w-md mx-4">
+          <div className="text-red-500 text-5xl mb-2">⚠️</div>
+          <h2 className="text-xl font-bold text-slate-800">Access Denied</h2>
+          <p className="text-slate-500 text-sm">
+            You do not have permission to access the admin dashboard. Redirecting...
+          </p>
+        </div>
+        <Toaster position="bottom-center" />
+      </div>
+    );
+  }
 
   return (
     <>

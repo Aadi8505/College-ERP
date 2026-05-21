@@ -7,7 +7,9 @@ const Profile = ({ profileData }) => {
   if (!profileData) return null;
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -26,13 +28,13 @@ const Profile = ({ profileData }) => {
           />
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {`${profileData.firstName} ${profileData.middleName} ${profileData.lastName}`}
+              {`${profileData.firstName} ${profileData.middleName ? profileData.middleName + ' ' : ''}${profileData.lastName}`}
             </h1>
             <p className="text-lg text-gray-600 mb-1">
               {profileData.enrollmentNo}
             </p>
             <p className="text-lg text-blue-600 font-medium">
-              {profileData.branchId.name}
+              {profileData.branchId?.name || "N/A"}
             </p>
           </div>
         </div>
@@ -86,9 +88,9 @@ const Profile = ({ profileData }) => {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">
-                Semester
+                Batch
               </label>
-              <p className="text-gray-900">{profileData.semester}</p>
+              <p className="text-gray-900">{profileData.batch}</p>
             </div>
           </div>
         </div>
@@ -137,7 +139,7 @@ const Profile = ({ profileData }) => {
             <div>
               <label className="text-sm font-medium text-gray-500">Name</label>
               <p className="text-gray-900">
-                {profileData.emergencyContact.name}
+                {profileData.emergencyContact?.name || "N/A"}
               </p>
             </div>
             <div>
@@ -145,13 +147,13 @@ const Profile = ({ profileData }) => {
                 Relationship
               </label>
               <p className="text-gray-900">
-                {profileData.emergencyContact.relationship}
+                {profileData.emergencyContact?.relationship || "N/A"}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Phone</label>
               <p className="text-gray-900">
-                {profileData.emergencyContact.phone}
+                {profileData.emergencyContact?.phone || "N/A"}
               </p>
             </div>
           </div>

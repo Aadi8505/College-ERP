@@ -1,13 +1,14 @@
 const Exam = require("../models/exam.model");
+const Marks = require("../models/marks.model");
 const ApiResponse = require("../utils/ApiResponse");
 
 const getAllExamsController = async (req, res) => {
   try {
-    const { search = "", examType = "", semester = "" } = req.query;
+    const { search = "", examType = "", batch = "" } = req.query;
 
     let query = {};
 
-    if (semester) query.semester = semester;
+    if (batch) query.batch = batch;
     if (examType) query.examType = examType;
 
     const exams = await Exam.find(query);
@@ -52,7 +53,20 @@ const updateExamController = async (req, res) => {
 
 const deleteExamController = async (req, res) => {
   try {
-    const exam = await Exam.findByIdAndDelete(req.params.id);
+    const examId = req.params.id;
+    const marksCount = await Marks.countDocuments({ examId });
+
+    if (marksCount > 0) {
+      return ApiResponse.conflict(
+        `Cannot delete: ${marksCount} marks records are linked to this exam.`,
+      ).send(res);
+    }
+
+    const exam = await Exam.findByIdAndDelete(examId);
+    if (!exam) {
+      return ApiResponse.error("Exam Not Found!", 404).send(res);
+    }
+
     return ApiResponse.success(exam, "Exam Deleted Successfully!").send(res);
   } catch (error) {
     return ApiResponse.error(error.message).send(res);

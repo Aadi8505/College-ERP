@@ -2,31 +2,65 @@ const nodemailer = require("nodemailer");
 
 const sendResetMail = async (email, resetToken, type) => {
   try {
+    // Validate required environment variables
+    if (!process.env.NODEMAILER_EMAIL || !process.env.NODEMAILER_PASS) {
+      console.error("Missing email configuration:", {
+        hasEmail: !!process.env.NODEMAILER_EMAIL,
+        hasPass: !!process.env.NODEMAILER_PASS,
+      });
+      throw new Error(
+        "Email configuration is missing (NODEMAILER_EMAIL or NODEMAILER_PASS)",
+      );
+    }
+
+    if (!process.env.FRONTEND_API_LINK) {
+      throw new Error("FRONTEND_API_LINK is not set");
+    }
+
     const transporter = nodemailer.createTransport({
       service: "Gmail",
       auth: {
-        user: process.env.NODEMAILER_EMAIL,
-        pass: process.env.NODEMAILER_PASS,
+        user: process.env.NODEMAILER_EMAIL.trim(),
+        pass: process.env.NODEMAILER_PASS.trim(),
       },
     });
 
+    // Verify connection configuration
+    await transporter.verify();
+
+    const resetLink = `${process.env.FRONTEND_API_LINK}/${type}/update-password/${resetToken}`;
+
     const mailOptions = {
-      from: process.env.EMAIL,
+      from: process.env.NODEMAILER_EMAIL.trim(),
       to: email,
-      subject: "Password Reset Request",
+      subject: "Password Reset Request - College Management System",
       html: `
-                <h2>Password Reset</h2>
-                <p>You requested for a password reset. Click the link below to reset your password. This link is valid for 10 minutes.</p>
-                <a href="${process.env.FRONTEND_API_LINK}/${type}/update-password/${resetToken}" target="_blank">Reset Password</a>
-                <p>If you did not request this, please ignore this email.</p>
-            `,
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset</h2>
+          <p style="color: #666; font-size: 14px;">You requested a password reset. Click the link below to reset your password. This link is valid for 10 minutes.</p>
+          <div style="margin: 20px 0;">
+            <a href="${resetLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+          </div>
+          <p style="color: #666; font-size: 12px;">Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
+          <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">If you did not request this, please ignore this email and do not click the link.</p>
+        </div>
+      `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log("Reset email sent successfully");
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Reset email sent successfully:", {
+      to: email,
+      messageId: info.messageId,
+    });
+    return info;
   } catch (error) {
-    console.error("Error sending reset email:", error);
-    throw new Error("Could not send reset email");
+    console.error("Error sending reset email:", {
+      message: error.message,
+      code: error.code,
+      email: email,
+    });
+    throw new Error("Could not send reset email: " + error.message);
   }
 };
 

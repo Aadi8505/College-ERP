@@ -8,9 +8,11 @@ const {
   deleteBranchController,
 } = require("../controllers/branch.controller");
 
+const requireRole = require("../middlewares/role.middleware");
+
 router.get("/", auth, getBranchController);
-router.post("/", auth, addBranchController);
-router.patch("/:id", auth, updateBranchController);
-router.delete("/:id", auth, deleteBranchController);
+router.post("/", auth, requireRole("admin"), addBranchController);
+router.patch("/:id", auth, requireRole("admin"), updateBranchController);
+router.delete("/:id", auth, requireRole("admin"), deleteBranchController);
 
 module.exports = router;

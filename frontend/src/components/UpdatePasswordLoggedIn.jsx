@@ -9,8 +9,6 @@ const UpdatePasswordLoggedIn = ({ onClose }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const userToken = localStorage.getItem("userToken");
-  const userType = localStorage.getItem("userType");
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
@@ -27,18 +25,10 @@ const UpdatePasswordLoggedIn = ({ onClose }) => {
 
     setIsLoading(true);
     try {
-      const response = await axiosWrapper.post(
-        `/${userType.toLowerCase()}/change-password`,
-        {
-          currentPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
-      );
+      const response = await axiosWrapper.post("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
 
       if (response.data.success) {
         toast.success("Password updated successfully");

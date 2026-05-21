@@ -31,11 +31,10 @@ const Material = () => {
     try {
       setDataLoading(true);
       const response = await axiosWrapper.get(
-        `/subject?semester=${userData.semester}&branch=${userData.branchId._id}`,
+        `/subject?batch=${userData.batch}&branch=${userData.branchId._id}`,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
           },
         }
       );
@@ -57,7 +56,7 @@ const Material = () => {
     try {
       setDataLoading(true);
       const queryParams = new URLSearchParams({
-        semester: userData.semester,
+        batch: userData.batch,
         branch: userData.branchId._id,
       });
 
@@ -67,7 +66,6 @@ const Material = () => {
       const response = await axiosWrapper.get(`/material?${queryParams}`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       });
       if (response.data.success) {
@@ -110,7 +108,7 @@ const Material = () => {
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Subjects</option>
-                {subjects.map((subject) => (
+                {subjects.filter(Boolean).map((subject) => (
                   <option key={subject._id} value={subject._id}>
                     {subject.name}
                   </option>
@@ -154,7 +152,7 @@ const Material = () => {
             </thead>
             <tbody>
               {materials && materials.length > 0 ? (
-                materials.map((material) => (
+                materials.filter(Boolean).map((material) => (
                   <tr key={material._id} className="border-b hover:bg-blue-50">
                     <td className="py-4 px-6">
                       <CustomButton
@@ -169,7 +167,9 @@ const Material = () => {
                       </CustomButton>
                     </td>
                     <td className="py-4 px-6">{material.title}</td>
-                    <td className="py-4 px-6">{material.subject.name}</td>
+                    <td className="py-4 px-6">
+                      {material.subject?.name || "Unknown"}
+                    </td>
                     <td className="py-4 px-6 capitalize">{material.type}</td>
                   </tr>
                 ))

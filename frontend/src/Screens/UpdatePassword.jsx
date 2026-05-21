@@ -33,7 +33,7 @@ const UpdatePassword = () => {
 
     try {
       const response = await axiosWrapper.post(
-        `/${type}/update-password/${resetId}`,
+        `/auth/update-password/${resetId}`,
         { password: newPassword, resetId }
       );
 

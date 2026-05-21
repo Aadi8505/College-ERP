@@ -13,14 +13,14 @@ const Material = new mongoose.Schema(
     },
     faculty: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "FacultyDetail",
+      ref: "User",
       required: true,
     },
     file: {
       type: String,
       required: true,
     },
-    semester: {
+    batch: {
       type: Number,
       required: true,
     },
@@ -35,7 +35,7 @@ const Material = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Material", Material);

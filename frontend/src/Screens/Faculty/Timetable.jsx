@@ -15,22 +15,28 @@ const AddTimetableModal = ({
   branches,
 }) => {
   const [formData, setFormData] = useState({
-    branch: initialData?.branch || "",
-    semester: initialData?.semester || "",
+    branch: initialData?.branch?._id || "",
+    batch: initialData?.batch || "",
     file: null,
-    previewUrl: initialData?.file || "",
+    previewUrl: initialData?.link ? process.env.REACT_APP_MEDIA_LINK + "/" + initialData.link : "",
   });
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setFormData({
-      ...formData,
-      file,
-      previewUrl: URL.createObjectURL(file),
-    });
+    if (file) {
+      setFormData({
+        ...formData,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
   };
 
   const handleSubmit = () => {
+    if (!formData.branch || !formData.batch || (!initialData && !formData.file)) {
+      toast.error("Please fill all required fields and select a file");
+      return;
+    }
     onSubmit(formData);
     onClose();
   };
@@ -38,31 +44,41 @@ const AddTimetableModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-8 rounded-lg w-[500px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
+      <div className="bg-white p-8 rounded-lg w-full max-w-[600px] max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">
-            {initialData ? "Edit Timetable" : "Add New Timetable"}
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {initialData ? "Edit Timetable" : "Upload Timetable"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {initialData
+                ? "Update the timetable details"
+                : "Add a new timetable for students"}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <IoMdClose className="text-3xl" />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Branch Selection */}
           <div>
-            <label className="block mb-2">Branch</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Select Branch <span className="text-red-500">*</span>
+            </label>
             <select
               value={formData.branch}
               onChange={(e) =>
                 setFormData({ ...formData, branch: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-md"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
-              <option value="">Select Branch</option>
+              <option value="">Choose a branch...</option>
               {branches?.map((b) => (
                 <option key={b._id} value={b._id}>
                   {b.name}
@@ -71,50 +87,74 @@ const AddTimetableModal = ({
             </select>
           </div>
 
+          {/* Batch Selection */}
           <div>
-            <label className="block mb-2">Semester</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Select Batch <span className="text-red-500">*</span>
+            </label>
             <select
-              value={formData.semester}
+              value={formData.batch}
               onChange={(e) =>
-                setFormData({ ...formData, semester: e.target.value })
+                setFormData({ ...formData, batch: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-md"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
-              <option value="">Select Semester</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                <option key={sem} value={sem}>
-                  Semester {sem}
+              <option value="">Choose a batch...</option>
+              {[23, 24, 25, 26].map((batch) => (
+                <option key={batch} value={batch}>
+                  Batch {batch}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* File Upload */}
           <div>
-            <label className="block mb-2">Timetable File</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full"
-            />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Timetable Image {!initialData && <span className="text-red-500">*</span>}
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer"
+              onClick={() => document.getElementById("file-input").click()}
+            >
+              <input
+                id="file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {!formData.previewUrl ? (
+                <div>
+                  <p className="text-gray-600 font-medium">📁 Click to upload or drag and drop</p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              ) : (
+                <p className="text-green-600 font-medium">✓ File selected</p>
+              )}
+            </div>
           </div>
 
+          {/* Preview */}
           {formData.previewUrl && (
             <div className="mt-4">
-              <img
-                src={formData.previewUrl}
-                alt="Preview"
-                className="max-w-full h-auto"
-              />
+              <p className="text-sm font-semibold text-gray-700 mb-2">Preview:</p>
+              <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                <img
+                  src={formData.previewUrl}
+                  alt="Preview"
+                  className="max-w-full h-auto max-h-80 mx-auto"
+                />
+              </div>
             </div>
           )}
 
-          <div className="flex justify-end gap-4 mt-6">
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
             <CustomButton variant="secondary" onClick={onClose}>
               Cancel
             </CustomButton>
             <CustomButton variant="primary" onClick={handleSubmit}>
-              {initialData ? "Update" : "Add"}
+              {initialData ? "Update Timetable" : "Upload Timetable"}
             </CustomButton>
           </div>
         </div>
@@ -130,7 +170,6 @@ const Timetable = () => {
   const [selectedTimetableId, setSelectedTimetableId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTimetable, setEditingTimetable] = useState(null);
-  const userToken = localStorage.getItem("userToken");
 
   useEffect(() => {
     getBranchHandler();
@@ -141,9 +180,7 @@ const Timetable = () => {
   const getBranchHandler = async () => {
     try {
       const response = await axiosWrapper.get(`/branch`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setBranch(response.data.data);
@@ -159,9 +196,7 @@ const Timetable = () => {
   const getTimetablesHandler = async () => {
     try {
       const response = await axiosWrapper.get(`/timetable`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setTimetables(response.data.data);
@@ -177,12 +212,11 @@ const Timetable = () => {
   const handleSubmitTimetable = async (formData) => {
     const headers = {
       "Content-Type": "multipart/form-data",
-      Authorization: `Bearer ${userToken}`,
     };
 
     const submitData = new FormData();
     submitData.append("branch", formData.branch);
-    submitData.append("semester", formData.semester);
+    submitData.append("batch", formData.batch);
     if (formData.file) {
       submitData.append("file", formData.file);
     }
@@ -230,11 +264,7 @@ const Timetable = () => {
       toast.loading("Deleting Timetable");
       const response = await axiosWrapper.delete(
         `/timetable/${selectedTimetableId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
+        {}
       );
       toast.dismiss();
       if (response.data.success) {
@@ -256,62 +286,165 @@ const Timetable = () => {
   };
 
   return (
-    <div className="w-full mx-auto mt-10 flex justify-center items-start flex-col mb-10 relative">
-      <div className="flex justify-between items-center w-full">
+    <div className="w-full mx-auto mt-10 flex justify-center items-start flex-col mb-10 relative px-4">
+      <div className="flex justify-between items-center w-full mb-8">
         <Heading title="Timetable Management" />
-        <CustomButton onClick={() => setShowAddModal(true)}>
+        <CustomButton onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
           <IoMdAdd className="text-2xl" />
+          <span>Add Timetable</span>
         </CustomButton>
       </div>
 
-      <div className="mt-8 w-full">
-        <table className="text-sm min-w-full bg-white">
-          <thead>
-            <tr className="bg-blue-500 text-white">
-              <th className="py-4 px-6 text-left font-semibold">View</th>
-              <th className="py-4 px-6 text-left font-semibold">Branch</th>
-              <th className="py-4 px-6 text-left font-semibold">Semester</th>
-              <th className="py-4 px-6 text-left font-semibold">Created At</th>
-              <th className="py-4 px-6 text-center font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {timetables.map((item, index) => (
-              <tr key={index} className="border-b hover:bg-blue-50">
-                <td className="py-4 px-6">
-                  <a
-                    className="text-xl"
-                    href={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MdLink />
-                  </a>
-                </td>
-                <td className="py-4 px-6">{item.branch.name}</td>
-                <td className="py-4 px-6">{item.semester}</td>
-                <td className="py-4 px-6">
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </td>
-                <td className="py-4 px-6 text-center flex justify-center gap-4">
-                  <CustomButton
-                    variant="secondary"
-                    onClick={() => editTimetableHandler(item)}
-                  >
-                    <MdEdit />
-                  </CustomButton>
-                  <CustomButton
-                    variant="danger"
-                    onClick={() => deleteTimetableHandler(item._id)}
-                  >
-                    <MdOutlineDelete />
-                  </CustomButton>
-                </td>
-              </tr>
+      {timetables.length === 0 ? (
+        <div className="w-full bg-yellow-50 border-2 border-yellow-200 rounded-lg p-8 text-center">
+          <p className="text-lg font-medium text-yellow-800">
+            📋 No Timetables Available
+          </p>
+          <p className="text-sm text-yellow-700 mt-2">
+            Start by adding a timetable for your branch and batch.
+          </p>
+        </div>
+      ) : (
+        <div className="w-full space-y-6">
+          {/* Grid View of Timetables */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+            {timetables.filter(Boolean).map((item, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 overflow-hidden"
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3">
+                  <h3 className="text-lg font-bold text-white">
+                    {item.branch?.name || "Unknown Branch"}
+                  </h3>
+                  <p className="text-blue-100 text-sm">
+                    Batch {item.batch}
+                  </p>
+                </div>
+
+                {/* Thumbnail Preview */}
+                <div className="relative h-48 bg-gray-100 overflow-hidden">
+                  <img
+                    src={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                    alt="Timetable preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all flex items-center justify-center opacity-0 hover:opacity-100">
+                    <a
+                      href={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+                    >
+                      <MdLink size={20} />
+                      View Full
+                    </a>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="px-4 py-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 mb-3">
+                    📅 {new Date(item.createdAt).toLocaleDateString()} • Updated:{" "}
+                    {new Date(item.updatedAt).toLocaleDateString()}
+                  </p>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <CustomButton
+                      variant="secondary"
+                      onClick={() => editTimetableHandler(item)}
+                      className="flex-1 text-sm flex items-center justify-center gap-1"
+                    >
+                      <MdEdit size={16} />
+                      Edit
+                    </CustomButton>
+                    <CustomButton
+                      variant="danger"
+                      onClick={() => deleteTimetableHandler(item._id)}
+                      className="flex-1 text-sm flex items-center justify-center gap-1"
+                    >
+                      <MdOutlineDelete size={16} />
+                      Delete
+                    </CustomButton>
+                  </div>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+
+          {/* Table View for detailed info */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              📊 Detailed View
+            </h3>
+            <div className="overflow-x-auto bg-white rounded-lg shadow-md">
+              <table className="text-sm w-full">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="py-4 px-6 text-left font-semibold">Branch</th>
+                    <th className="py-4 px-6 text-left font-semibold">Batch</th>
+                    <th className="py-4 px-6 text-left font-semibold">Created</th>
+                    <th className="py-4 px-6 text-left font-semibold">Updated</th>
+                    <th className="py-4 px-6 text-center font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {timetables.filter(Boolean).map((item, index) => (
+                    <tr
+                      key={index}
+                      className={`border-b ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-blue-50 transition-colors`}
+                    >
+                      <td className="py-4 px-6 font-medium">
+                        {item.branch?.name || "Unknown"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
+                          Batch {item.batch}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 px-6">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 px-6 text-center flex justify-center gap-3">
+                        <a
+                          href={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                          title="View full timetable"
+                        >
+                          <MdLink size={20} />
+                        </a>
+                        <button
+                          onClick={() => editTimetableHandler(item)}
+                          className="text-green-600 hover:text-green-800 transition-colors"
+                          title="Edit timetable"
+                        >
+                          <MdEdit size={20} />
+                        </button>
+                        <button
+                          onClick={() => deleteTimetableHandler(item._id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Delete timetable"
+                        >
+                          <MdOutlineDelete size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AddTimetableModal
         isOpen={showAddModal}

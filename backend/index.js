@@ -2,6 +2,7 @@ const connectToMongo = require("./Database/db");
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 connectToMongo();
@@ -9,6 +10,7 @@ connectToMongo();
 const port = process.env.PORT || 4000;
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(
   cors({
@@ -18,9 +20,8 @@ app.use(
 );
 
 // API routes FIRST
-app.use("/api/admin", require("./routes/details/admin-details.route"));
-app.use("/api/faculty", require("./routes/details/faculty-details.route"));
-app.use("/api/student", require("./routes/details/student-details.route"));
+app.use("/api/auth", require("./routes/auth.route"));
+app.use("/api/users", require("./routes/users.route"));
 app.use("/api/branch", require("./routes/branch.route"));
 app.use("/api/subject", require("./routes/subject.route"));
 app.use("/api/notice", require("./routes/notice.route"));

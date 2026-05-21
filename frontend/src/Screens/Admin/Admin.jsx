@@ -37,7 +37,6 @@ const Admin = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedAdminId, setSelectedAdminId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const userToken = localStorage.getItem("userToken");
   const [file, setFile] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
 
@@ -49,10 +48,8 @@ const Admin = () => {
   const getAdminsHandler = async () => {
     try {
       setDataLoading(true);
-      const response = await axiosWrapper.get(`/admin`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+      const response = await axiosWrapper.get(`/users?role=admin`, {
+        headers: {},
       });
       if (response.data.success) {
         setAdmins(response.data.data);
@@ -76,7 +73,6 @@ const Admin = () => {
       toast.loading(isEditing ? "Updating Admin" : "Adding Admin");
       const headers = {
         "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${userToken}`,
       };
 
       const formData = new FormData();
@@ -97,17 +93,21 @@ const Admin = () => {
         formData.append("file", file);
       }
 
+      if (!isEditing) {
+        formData.append("role", "admin");
+      }
+
       let response;
       if (isEditing) {
         response = await axiosWrapper.patch(
-          `/admin/${selectedAdminId}`,
+          `/users/${selectedAdminId}`,
           formData,
           {
             headers,
           }
         );
       } else {
-        response = await axiosWrapper.post(`/admin/register`, formData, {
+        response = await axiosWrapper.post(`/users/register`, formData, {
           headers,
         });
       }
@@ -172,9 +172,8 @@ const Admin = () => {
       toast.loading("Deleting Admin");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
       };
-      const response = await axiosWrapper.delete(`/admin/${selectedAdminId}`, {
+      const response = await axiosWrapper.delete(`/users/${selectedAdminId}`, {
         headers,
       });
       toast.dismiss();

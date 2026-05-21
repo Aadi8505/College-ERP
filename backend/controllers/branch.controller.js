@@ -1,4 +1,6 @@
 const Branch = require("../models/branch.model");
+const Subject = require("../models/subject.model");
+const User = require("../models/user.model");
 const ApiResponse = require("../utils/ApiResponse");
 
 const getBranchController = async (req, res, next) => {
@@ -31,13 +33,13 @@ const addBranchController = async (req, res, next) => {
     if (existingBranch) {
       return ApiResponse.error(
         "Branch with this name or ID already exists!",
-        409
+        409,
       ).send(res);
     }
 
     const newBranch = await Branch.create(req.body);
     return ApiResponse.created(newBranch, "Branch Added Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
@@ -57,7 +59,7 @@ const updateBranchController = async (req, res, next) => {
       if (existingBranch) {
         return ApiResponse.error(
           "Branch with this name or ID already exists!",
-          409
+          409,
         ).send(res);
       }
     }
@@ -71,7 +73,7 @@ const updateBranchController = async (req, res, next) => {
     }
 
     return ApiResponse.success(branch, "Branch Updated Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
@@ -80,12 +82,26 @@ const updateBranchController = async (req, res, next) => {
 
 const deleteBranchController = async (req, res, next) => {
   try {
-    let branch = await Branch.findById(req.params.id);
+    const branchId = req.params.id;
+
+    let branch = await Branch.findById(branchId);
     if (!branch) {
       return ApiResponse.error("Branch Not Found!", 404).send(res);
     }
 
-    await Branch.findByIdAndDelete(req.params.id);
+    const [students, faculty, subjects] = await Promise.all([
+      User.countDocuments({ branchId, role: "student" }),
+      User.countDocuments({ branchId, role: "faculty" }),
+      Subject.countDocuments({ branch: branchId }),
+    ]);
+
+    if (students + faculty + subjects > 0) {
+      return ApiResponse.conflict(
+        `Cannot delete: ${students} students, ${faculty} faculty, and ${subjects} subjects are linked to this branch.`,
+      ).send(res);
+    }
+
+    await Branch.findByIdAndDelete(branchId);
     return ApiResponse.success(null, "Branch Deleted Successfully!").send(res);
   } catch (error) {
     return ApiResponse.error(error.message).send(res);

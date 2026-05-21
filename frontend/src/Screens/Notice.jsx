@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { IoMdLink, IoMdAdd, IoMdClose } from "react-icons/io";
 import { HiOutlineCalendar } from "react-icons/hi";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { MdDeleteOutline, MdEditNote } from "react-icons/md";
 import toast from "react-hot-toast";
 import Heading from "../components/Heading";
@@ -12,14 +12,12 @@ import Loading from "../components/Loading";
 
 const Notice = () => {
   const router = useLocation();
-  const navigate = useNavigate();
   const [notices, setNotices] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedNoticeId, setSelectedNoticeId] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
-  const token = localStorage.getItem("userToken");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -28,23 +26,24 @@ const Notice = () => {
     link: "",
   });
 
-  useEffect(() => {
-    if (!token) {
-      toast.error("Please login to continue");
-      navigate("/login");
-    }
-  }, [token, navigate]);
-
   const getNotices = async () => {
     try {
       setDataLoading(true);
       const response = await axiosWrapper.get("/notice", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
-        setNotices(response.data.data);
+        let fetchedNotices = response.data.data;
+        if (router.pathname === "/student") {
+          fetchedNotices = fetchedNotices.filter(
+            (n) => n.type === "student" || n.type === "both"
+          );
+        } else if (router.pathname === "/faculty") {
+          fetchedNotices = fetchedNotices.filter(
+            (n) => n.type === "faculty" || n.type === "both"
+          );
+        }
+        setNotices(fetchedNotices);
       } else {
         toast.error(response.data.message);
       }
@@ -102,9 +101,7 @@ const Notice = () => {
       const response = await axiosWrapper[editingNotice ? "put" : "post"](
         `/notice${editingNotice ? `/${editingNotice._id}` : ""}`,
         formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        {}
       );
 
       toast.dismiss();
@@ -127,9 +124,7 @@ const Notice = () => {
       toast.loading("Deleting Notice");
       const response = await axiosWrapper.delete(
         `/notice/${selectedNoticeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        {}
       );
 
       toast.dismiss();

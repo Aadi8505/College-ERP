@@ -15,7 +15,7 @@ const Subject = () => {
     name: "",
     code: "",
     branch: "",
-    semester: "",
+    batch: "",
     credits: "",
   });
   const [subject, setSubject] = useState([]);
@@ -24,7 +24,6 @@ const Subject = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const userToken = localStorage.getItem("userToken");
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
@@ -37,9 +36,7 @@ const Subject = () => {
     try {
       setDataLoading(true);
       const response = await axiosWrapper.get(`/subject`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setSubject(response.data.data);
@@ -61,9 +58,7 @@ const Subject = () => {
     try {
       setDataLoading(true);
       const response = await axiosWrapper.get(`/branch`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: {},
       });
       if (response.data.success) {
         setBranches(response.data.data);
@@ -86,7 +81,7 @@ const Subject = () => {
       !data.name ||
       !data.code ||
       !data.branch ||
-      !data.semester ||
+      !data.batch ||
       !data.credits
     ) {
       toast.dismiss();
@@ -98,7 +93,6 @@ const Subject = () => {
       toast.loading(isEditing ? "Updating Subject" : "Adding Subject");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
       };
       let response;
       if (isEditing) {
@@ -135,7 +129,7 @@ const Subject = () => {
       name: "",
       code: "",
       branch: "",
-      semester: "",
+      batch: "",
       credits: "",
     });
     setShowModal(false);
@@ -153,7 +147,7 @@ const Subject = () => {
       name: subject.name,
       code: subject.code,
       branch: subject.branch?._id,
-      semester: subject.semester,
+      batch: subject.batch,
       credits: subject.credits,
     });
     setSelectedSubjectId(subject._id);
@@ -167,7 +161,6 @@ const Subject = () => {
       toast.loading("Deleting Subject");
       const headers = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
       };
       const response = await axiosWrapper.delete(
         `/subject/${selectedSubjectId}`,
@@ -226,7 +219,7 @@ const Subject = () => {
                   <th className="py-4 px-6 text-left font-semibold">Code</th>
                   <th className="py-4 px-6 text-left font-semibold">Branch</th>
                   <th className="py-4 px-6 text-left font-semibold">
-                    Semester
+                    Batch
                   </th>
                   <th className="py-4 px-6 text-left font-semibold">Credits</th>
                   <th className="py-4 px-6 text-center font-semibold">
@@ -241,7 +234,7 @@ const Subject = () => {
                       <td className="py-4 px-6">{item.name}</td>
                       <td className="py-4 px-6">{item.code}</td>
                       <td className="py-4 px-6">{item.branch?.name}</td>
-                      <td className="py-4 px-6">{item.semester}</td>
+                      <td className="py-4 px-6">{item.batch}</td>
                       <td className="py-4 px-6">{item.credits}</td>
                       <td className="py-4 px-6 text-center flex justify-center gap-4">
                         <CustomButton
@@ -328,20 +321,20 @@ const Subject = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Semester
+                  Batch
                 </label>
                 <select
-                  value={data.semester}
+                  value={data.batch}
                   onChange={(e) =>
-                    setData({ ...data, semester: e.target.value })
+                    setData({ ...data, batch: e.target.value })
                   }
                   className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">Select Semester</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                      Semester {sem}
+                  <option value="">Select Batch</option>
+                  {[23, 24, 25, 26].map((b) => (
+                    <option key={b} value={b}>
+                      Batch {b}
                     </option>
                   ))}
                 </select>

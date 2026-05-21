@@ -3,15 +3,28 @@ const ApiResponse = require("../utils/ApiResponse");
 
 const auth = async (req, res, next) => {
   try {
-    let token = req.header("Authorization");
+    const cookieToken = req.cookies?.token;
+    let token = cookieToken;
 
-    if (!token || !token.startsWith("Bearer ")) {
-      return ApiResponse.unauthorized("Authentication token required").send(
-        res
-      );
+    if (!token) {
+      const header = req.header("Authorization");
+      if (header && header.startsWith("Bearer ")) {
+        const headerToken = header.split(" ")[1];
+        if (
+          headerToken &&
+          headerToken !== "null" &&
+          headerToken !== "undefined"
+        ) {
+          token = headerToken;
+        }
+      }
     }
 
-    token = token.split(" ")[1];
+    if (!token) {
+      return ApiResponse.unauthorized("Authentication token required").send(
+        res,
+      );
+    }
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

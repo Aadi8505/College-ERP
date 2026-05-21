@@ -1,9 +1,25 @@
 const Notice = require("../models/notice.model");
+const User = require("../models/user.model");
 const ApiResponse = require("../utils/ApiResponse");
 
 const getNoticeController = async (req, res) => {
   try {
-    const notices = await Notice.find();
+    let query = {};
+
+    if (req.userId) {
+      const user = await User.findById(req.userId).select("role");
+      if (!user) {
+        return ApiResponse.notFound("User not found").send(res);
+      }
+
+      if (user.role === "student") {
+        query.type = { $in: ["student", "both"] };
+      } else if (user.role === "faculty") {
+        query.type = { $in: ["faculty", "both"] };
+      }
+    }
+
+    const notices = await Notice.find(query);
     if (!notices || notices.length === 0) {
       return ApiResponse.error("No Notices Found", 404).send(res);
     }
@@ -57,7 +73,7 @@ const updateNoticeController = async (req, res) => {
     }
 
     return ApiResponse.success(notice, "Notice Updated Successfully!").send(
-      res
+      res,
     );
   } catch (error) {
     return ApiResponse.error(error.message).send(res);

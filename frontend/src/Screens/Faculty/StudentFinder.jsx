@@ -9,7 +9,7 @@ const StudentFinder = () => {
   const [searchParams, setSearchParams] = useState({
     enrollmentNo: "",
     name: "",
-    semester: "",
+    batch: "",
     branch: "",
   });
   const [students, setStudents] = useState([]);
@@ -17,7 +17,6 @@ const StudentFinder = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const userToken = localStorage.getItem("userToken");
   const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
@@ -25,9 +24,7 @@ const StudentFinder = () => {
       try {
         toast.loading("Loading branches...");
         const response = await axiosWrapper.get("/branch", {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
+          headers: {},
         });
         if (response.data.success) {
           setBranches(response.data.data);
@@ -47,7 +44,7 @@ const StudentFinder = () => {
       }
     };
     fetchBranches();
-  }, [userToken]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,12 +60,19 @@ const StudentFinder = () => {
     setHasSearched(true);
     toast.loading("Searching students...");
     setStudents([]);
+
+    const payload = {
+      searchQuery: searchParams.enrollmentNo || searchParams.name || "",
+      branchId: searchParams.branch || "",
+      batch: searchParams.batch || "",
+    };
+
     try {
       const response = await axiosWrapper.post(
-        `/student/search`,
-        searchParams,
+        `/users/search/students`,
+        payload,
         {
-          headers: { Authorization: `Bearer ${userToken}` },
+          headers: {},
         }
       );
 
@@ -137,18 +141,18 @@ const StudentFinder = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Semester
+                Batch (Year Joined)
               </label>
               <select
-                name="semester"
-                value={searchParams.semester}
+                name="batch"
+                value={searchParams.batch}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Semester</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                  <option key={sem} value={sem}>
-                    Semester {sem}
+                <option value="">Select Batch</option>
+                {[23, 24, 25, 26].map((batch) => (
+                  <option key={batch} value={batch}>
+                    Batch {batch}
                   </option>
                 ))}
               </select>
@@ -212,7 +216,7 @@ const StudentFinder = () => {
                     <th className="px-6 py-3 border-b text-left">
                       Enrollment No
                     </th>
-                    <th className="px-6 py-3 border-b text-left">Semester</th>
+                    <th className="px-6 py-3 border-b text-left">Batch</th>
                     <th className="px-6 py-3 border-b text-left">Branch</th>
                     <th className="px-6 py-3 border-b text-left">Email</th>
                   </tr>
@@ -240,9 +244,9 @@ const StudentFinder = () => {
                         {student.lastName}
                       </td>
                       <td className="px-6 py-4 border-b">
-                        {student.enrollmentNo}
+                        {student.rollNumber}
                       </td>
-                      <td className="px-6 py-4 border-b">{student.semester}</td>
+                      <td className="px-6 py-4 border-b">{student.batch}</td>
                       <td className="px-6 py-4 border-b">
                         {student.branchId?.name}
                       </td>
@@ -334,8 +338,8 @@ const StudentFinder = () => {
                       {selectedStudent.branchId?.name}
                     </p>
                     <p>
-                      <span className="font-medium">Semester:</span>{" "}
-                      {selectedStudent.semester}
+                      <span className="font-medium">Batch:</span> 
+                      {selectedStudent.batch}
                     </p>
                   </div>
                 </div>
