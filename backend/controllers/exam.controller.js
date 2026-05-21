@@ -1,6 +1,7 @@
 const Exam = require("../models/exam.model");
 const Marks = require("../models/marks.model");
 const ApiResponse = require("../utils/ApiResponse");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
 const getAllExamsController = async (req, res) => {
   try {
@@ -27,7 +28,11 @@ const addExamController = async (req, res) => {
   try {
     const formData = req.body;
     if (req.file) {
-      formData.timetableLink = req.file.filename;
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/exams");
+      if (!cloudinaryResponse) {
+        return ApiResponse.error("Failed to upload exam timetable to cloud").send(res);
+      }
+      formData.timetableLink = cloudinaryResponse.secure_url;
     }
     const exam = await Exam.create(formData);
     return ApiResponse.success(exam, "Exam Added Successfully!").send(res);
@@ -39,9 +44,22 @@ const addExamController = async (req, res) => {
 const updateExamController = async (req, res) => {
   try {
     const formData = req.body;
-    if (req.file) {
-      formData.timetableLink = req.file.filename;
+    const existingExam = await Exam.findById(req.params.id);
+    if (!existingExam) {
+      return ApiResponse.error("Exam Not Found!", 404).send(res);
     }
+
+    if (req.file) {
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/exams");
+      if (!cloudinaryResponse) {
+        return ApiResponse.error("Failed to upload new exam timetable to cloud").send(res);
+      }
+      formData.timetableLink = cloudinaryResponse.secure_url;
+      
+      // Delete old file from Cloudinary
+      await deleteFromCloudinary(existingExam.timetableLink);
+    }
+
     const exam = await Exam.findByIdAndUpdate(req.params.id, formData, {
       new: true,
     });
@@ -62,11 +80,15 @@ const deleteExamController = async (req, res) => {
       ).send(res);
     }
 
-    const exam = await Exam.findByIdAndDelete(examId);
+    const exam = await Exam.findById(examId);
     if (!exam) {
       return ApiResponse.error("Exam Not Found!", 404).send(res);
     }
 
+    // Delete associated file from Cloudinary
+    await deleteFromCloudinary(exam.timetableLink);
+
+    await Exam.findByIdAndDelete(examId);
     return ApiResponse.success(exam, "Exam Deleted Successfully!").send(res);
   } catch (error) {
     return ApiResponse.error(error.message).send(res);

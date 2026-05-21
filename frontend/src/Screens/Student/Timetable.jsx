@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import axiosWrapper from "../../utils/AxiosWrapper";
 import { toast } from "react-hot-toast";
 import Loading from "../../components/Loading";
+import { getMediaUrl } from "../../utils/media";
 
 const Timetable = () => {
   const [timetable, setTimetable] = useState(null);
@@ -80,7 +81,7 @@ const Timetable = () => {
               </div>
               <button
                 onClick={() =>
-                  window.open(process.env.REACT_APP_MEDIA_LINK + "/" + timetable.link)
+                  window.open(getMediaUrl(timetable.link))
                 }
                 className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors"
               >
@@ -120,7 +121,7 @@ const Timetable = () => {
                 <div className="flex justify-center">
                   <img
                     className="rounded-lg shadow-md max-w-full h-auto border border-gray-300"
-                    src={process.env.REACT_APP_MEDIA_LINK + "/" + timetable.link}
+                    src={getMediaUrl(timetable.link)}
                     alt="timetable"
                     style={{ maxHeight: "600px" }}
                   />

@@ -8,6 +8,7 @@ import axiosWrapper from "../../utils/AxiosWrapper";
 import CustomButton from "../../components/CustomButton";
 import NoData from "../../components/NoData";
 import { CgDanger } from "react-icons/cg";
+import { getMediaUrl } from "../../utils/media";
 
 const Student = () => {
   const [searchParams, setSearchParams] = useState({
@@ -446,7 +447,7 @@ const Student = () => {
                       <tr key={student._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 border-b">
                           <img
-                            src={`${process.env.REACT_APP_MEDIA_LINK}/${student.profile}`}
+                            src={getMediaUrl(student.profile)}
                             alt={`${student.firstName}'s profile`}
                             className="w-12 h-12 object-cover rounded-full"
                             onError={(e) => {

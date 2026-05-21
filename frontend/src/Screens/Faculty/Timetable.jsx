@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import axiosWrapper from "../../utils/AxiosWrapper";
 import DeleteConfirm from "../../components/DeleteConfirm";
 import CustomButton from "../../components/CustomButton";
+import { getMediaUrl } from "../../utils/media";
 
 const AddTimetableModal = ({
   isOpen,
@@ -18,7 +19,7 @@ const AddTimetableModal = ({
     branch: initialData?.branch?._id || "",
     batch: initialData?.batch || "",
     file: null,
-    previewUrl: initialData?.link ? process.env.REACT_APP_MEDIA_LINK + "/" + initialData.link : "",
+    previewUrl: initialData?.link ? getMediaUrl(initialData.link) : "",
   });
 
   const handleFileChange = (e) => {
@@ -326,13 +327,13 @@ const Timetable = () => {
                 {/* Thumbnail Preview */}
                 <div className="relative h-48 bg-gray-100 overflow-hidden">
                   <img
-                    src={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                    src={getMediaUrl(item.link)}
                     alt="Timetable preview"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all flex items-center justify-center opacity-0 hover:opacity-100">
                     <a
-                      href={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                      href={getMediaUrl(item.link)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
@@ -414,7 +415,7 @@ const Timetable = () => {
                       </td>
                       <td className="py-4 px-6 text-center flex justify-center gap-3">
                         <a
-                          href={process.env.REACT_APP_MEDIA_LINK + "/" + item.link}
+                          href={getMediaUrl(item.link)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 transition-colors"

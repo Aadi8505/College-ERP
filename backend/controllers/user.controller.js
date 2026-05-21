@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const ApiResponse = require("../utils/ApiResponse");
 const sendResetMail = require("../utils/SendMail");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
 // ═══════════════════════════════════════════════════════════════
 // AUTH CONTROLLERS
@@ -456,6 +457,14 @@ const registerController = async (req, res) => {
         "",
     };
 
+    let profileUrl;
+    if (req.file) {
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/profiles");
+      if (cloudinaryResponse) {
+        profileUrl = cloudinaryResponse.secure_url;
+      }
+    }
+
     // ─── Build user data ────────────────────────────────────
     const userData = {
       role,
@@ -468,7 +477,7 @@ const registerController = async (req, res) => {
       gender: gender.toLowerCase(),
       dob: new Date(dob),
       bloodGroup: bloodGroup || undefined,
-      profile: req.file ? req.file.filename : undefined,
+      profile: profileUrl,
       address: address.trim(),
       city: city.trim(),
       state: state.trim(),
@@ -573,7 +582,17 @@ const updateDetailsController = async (req, res) => {
 
     // Handle file upload
     if (req.file) {
-      updateData.profile = req.file.filename;
+      const existingUser = await User.findById(id);
+      if (existingUser) {
+        const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/profiles");
+        if (cloudinaryResponse) {
+          updateData.profile = cloudinaryResponse.secure_url;
+          // Delete old profile image from Cloudinary (if any)
+          if (existingUser.profile) {
+            await deleteFromCloudinary(existingUser.profile);
+          }
+        }
+      }
     }
 
     // Handle emergency contact from FormData
@@ -630,11 +649,18 @@ const deleteDetailsController = async (req, res) => {
       );
     }
 
-    const user = await User.findByIdAndDelete(id);
+    const user = await User.findById(id);
 
     if (!user) {
       return ApiResponse.notFound("User not found").send(res);
     }
+
+    // Delete profile image from Cloudinary
+    if (user.profile) {
+      await deleteFromCloudinary(user.profile);
+    }
+
+    await User.findByIdAndDelete(id);
 
     // Clean up related reset tokens
     await ResetPassword.deleteMany({ userId: id });

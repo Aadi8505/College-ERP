@@ -10,6 +10,7 @@ import CustomButton from "../components/CustomButton";
 import { FiUpload } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import Loading from "../components/Loading";
+import { getMediaUrl } from "../utils/media";
 
 const Exam = () => {
   const [data, setData] = useState({
@@ -264,11 +265,7 @@ const Exam = () => {
                             <td className="py-4 px-6">
                               {item.timetableLink ? (
                                 <a
-                                  href={
-                                    process.env.REACT_APP_MEDIA_LINK +
-                                    "/" +
-                                    item.timetableLink
-                                  }
+                                  href={getMediaUrl(item.timetableLink)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
@@ -370,11 +367,7 @@ const Exam = () => {
                           <td className="py-4 px-6">
                             {item.timetableLink ? (
                               <a
-                                href={
-                                  process.env.REACT_APP_MEDIA_LINK +
-                                  "/" +
-                                  item.timetableLink
-                                }
+                                href={getMediaUrl(item.timetableLink)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"

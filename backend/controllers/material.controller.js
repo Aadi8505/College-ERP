@@ -1,5 +1,6 @@
 const Material = require("../models/material.model");
 const ApiResponse = require("../utils/ApiResponse");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinary");
 
 const getMaterialsController = async (req, res) => {
   try {
@@ -48,6 +49,12 @@ const addMaterialController = async (req, res) => {
       return ApiResponse.badRequest("Invalid material type").send(res);
     }
 
+    // Upload file to Cloudinary
+    const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/materials");
+    if (!cloudinaryResponse) {
+      return ApiResponse.internalServerError("Failed to upload material to cloud").send(res);
+    }
+
     const material = await Material.create({
       title,
       subject,
@@ -55,7 +62,7 @@ const addMaterialController = async (req, res) => {
       batch,
       branch,
       type,
-      file: req.file.filename,
+      file: cloudinaryResponse.secure_url,
     });
 
     const populatedMaterial = await Material.findById(material._id)
@@ -105,7 +112,18 @@ const updateMaterialController = async (req, res) => {
       }
       updateData.type = type;
     }
-    if (req.file) updateData.file = req.file.filename;
+    
+    if (req.file) {
+      // Upload new file to Cloudinary
+      const cloudinaryResponse = await uploadToCloudinary(req.file.path, "college_erp/materials");
+      if (!cloudinaryResponse) {
+        return ApiResponse.internalServerError("Failed to upload new material to cloud").send(res);
+      }
+      updateData.file = cloudinaryResponse.secure_url;
+
+      // Delete old file from Cloudinary
+      await deleteFromCloudinary(material.file);
+    }
 
     const updatedMaterial = await Material.findByIdAndUpdate(id, updateData, {
       new: true,
@@ -143,6 +161,9 @@ const deleteMaterialController = async (req, res) => {
         "You are not authorized to delete this material",
       ).send(res);
     }
+
+    // Delete file from Cloudinary
+    await deleteFromCloudinary(material.file);
 
     await Material.findByIdAndDelete(id);
 
